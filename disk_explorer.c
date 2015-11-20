@@ -338,7 +338,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		#define wsize 256						//sps:	Размер буфера
+		#define wsize 270						//sps:	Размер буфера
 		#define hsize wsize/2					//sps:	Размер оловины буфера
 
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
@@ -346,7 +346,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		unsigned int len;					//sps:	Возврат прочитанных байт
 		unsigned int offs=0;				//sps:	Смещение буфера по файлу
 		unsigned int grab;					//sps:	Кол-во загружаеммых в буфер байт
-//		bool need_regrab=true;				//sps:	Перезгрузка буфера
 
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
@@ -376,6 +375,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					DBGF("Buf_end => %d",offs+len);
 					DBGF("Point_now => %d",point);
 					DBGF("Global_point => %d",gpoint);
+					DBGF("Offset => %d",offs);
+					DBGF("Wsize => %d",wsize);
+					DBGF("Hsize => %d",hsize);
 					DBGF("|%s|",wbuf);
 					DBG("======================");
 			}
@@ -536,7 +538,17 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									if (key != KEY_NONE)
 									{
 										if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
-										{point-=15;}
+										{
+											point-=15;
+											gpoint-=15;
+											DBGF("point = %d",point);
+											if (gpoint<=offs && offs!=0)
+											{
+												point=150; //
+												offs-=hsize;
+												ReGrab();
+											};
+										}
 										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && point+89 < size)
 										{
 											point+=15;
@@ -544,7 +556,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											DBGF("point = %d",point);
 											if (gpoint+90>=offs+wsize)
 											{
-												point=60;
+												point=60;	//wsize-75
 												offs+=hsize;
 												ReGrab();
 											};
