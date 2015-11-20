@@ -338,7 +338,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		#define wsize 270						//sps:	Размер буфера
+		#define wsize 540						//sps:	Размер буфера
 		#define hsize wsize/2					//sps:	Размер оловины буфера
 
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
@@ -544,7 +544,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											DBGF("point = %d",point);
 											if (gpoint<=offs && offs!=0)
 											{
-												point=150; //
+												point=hsize+15; //150
 												offs-=hsize;
 												ReGrab();
 											};
@@ -556,7 +556,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											DBGF("point = %d",point);
 											if (gpoint+90>=offs+wsize)
 											{
-												point=60;	//wsize-75
+												point=hsize-75;	//60
 												offs+=hsize;
 												ReGrab();
 											};
