@@ -613,13 +613,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
 				if(rkey==KEY_RSOFT)											//sps: Смена вида?
 				{
-				//	gpoint=(gpoint/hstrsz)*hstrsz;							//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+					gpoint=(gpoint/hstrsz)*hstrsz;							//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 					point=(point/hstrsz)*hstrsz;
 
 					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
-				//	gpoint=(gpoint/tstrsz)*tstrsz;							//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
+					gpoint=(gpoint/tstrsz)*tstrsz;							//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
 					point=(point/tstrsz)*tstrsz;
 					}
 					else{break;}											//sps: Закрыть просмотр
