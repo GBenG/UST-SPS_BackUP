@@ -342,6 +342,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		#define hsize wsize/2													//sps:	Размер половины буфера
 		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT						//sps:	Кол-во символов на экране в TXT
 		#define hscrsze 20														//sps:	Кол-во символов на экране в HEX
+		#define tstrsz 15														//sps:	Кол-во обрабатываемых символов в строке TXT
+		#define hstrsz 4														//sps:	Кол-во обрабатываемых символов в строке HEX
 
 //-----------------------------------------------------------------------------------------------
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
@@ -392,12 +394,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				sScreen* screen = &window->screen;
 
 				bool need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
-				char*  offset=UNS_MALLOC(15+1);									//sps: Смещение номера считанного байта файла в НЕХ
-				char*  hexstr=UNS_MALLOC(15+1);									//sps: Сформированная строка на вывод в окно
+				char*  offset=UNS_MALLOC(tstrsz+1);								//sps: Смещение номера считанного байта файла в НЕХ
+				char*  hexstr=UNS_MALLOC(tstrsz+1);								//sps: Сформированная строка на вывод в окно
 				char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
 
-				char*  hxblok=UNS_MALLOC(8+1);									//sps: Блок шестнадцтеричных значений считанных байт
-				char*  asblok=UNS_MALLOC(4+1);									//sps: Блок ASCII значений считанных байт
+				char*  hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
+				char*  asblok=UNS_MALLOC(hstrsz+1);								//sps: Блок ASCII значений считанных байт
 
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;
 
@@ -413,14 +415,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(msg,"");
 
 //-----------------------------------------------------------------------------------------------
-						for(int j=point;j<point+hscrsze;j+=4)									//sps: формируем пять строк
+						for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
 						{
 							sprintf(hxblok,"");												//sps: Чистим фсе
 							sprintf(asblok,"");
 
-							for(int i=j;i<j+4;i++)											//sps: формируем hxblok и asblok
+							for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
 							{
-								sprintf(hxblok,"%s%02X",hxblok,wbuf[i]);						//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								sprintf(hxblok,"%s%02X",hxblok,wbuf[i]);					//sps: hxblok - шестнадцтеричная форма байт в ASCII
 
 								if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
 								{
@@ -437,11 +439,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
-						Screen_Clear(screen);
-						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+							Screen_Clear(screen);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
 
-						Screen_PutString(screen,offset,true);
-						Screen_PutString(screen,msg,false);
+							Screen_PutString(screen,offset,true);
+							Screen_PutString(screen,msg,false);
 
 						MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
 						need_redraw=false;													//sps: закрыли иф, пока кнопку не ткнут
@@ -452,20 +454,20 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						{
 							if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 							{
-								point-=4;
-								gpoint-=4;
+								point-=hstrsz;
+								gpoint-=hstrsz;
 								DBGF("point = %d",point);
 								if (gpoint<=offs && offs!=0)
 								{
-									point=hsize+4;
+									point=hsize+hstrsz;
 									offs-=hsize;
 									ReGrab();
 								};
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && gpoint+hscrsze < size)
 							{
-								point+=4;
-								gpoint+=4;
+								point+=hstrsz;
+								gpoint+=hstrsz;
 								DBGF("point = %d",point);
 								if (gpoint+hscrsze>=offs+wsize)
 								{
@@ -493,7 +495,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								return key;
 								break;
 							}
-							else if (key == KEY_PRINT)
+							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄]
 							{
 								msg[0]='\n';
 								msg[15]='\n';
@@ -556,20 +558,20 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									{
 										if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 										{
-											point-=15;
-											gpoint-=15;
+											point-=tstrsz;
+											gpoint-=tstrsz;
 											DBGF("point = %d",point);
 											if (gpoint<=offs && offs!=0)
 											{
-												point=hsize+15;
+												point=hsize+tstrsz;
 												offs-=hsize;
 												ReGrab();
 											};
 										}
 										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && gpoint+scrsize < size)
 										{
-											point+=15;
-											gpoint+=15;
+											point+=tstrsz;
+											gpoint+=tstrsz;
 											DBGF("point = %d",point);
 											if (gpoint+scrsize>=offs+wsize)
 											{
@@ -611,12 +613,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
 				if(rkey==KEY_RSOFT)											//sps: Смена вида?
 				{
-					gpoint=(gpoint/4)*4;												//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+					gpoint=(gpoint/hstrsz)*hstrsz;												//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
 					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
-					gpoint=(gpoint/15)*15;									//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
+					gpoint=(gpoint/tstrsz)*tstrsz;									//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
 					}
 					else{break;}												//sps: Закрыть просмотр
 			}
