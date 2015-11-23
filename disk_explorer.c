@@ -338,7 +338,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		#define wsize 1080														//sps:	Размер буфера
+		#define wsize 1024														//sps:	Размер буфера
 		#define hsize wsize/2													//sps:	Размер половины буфера
 		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT						//sps:	Кол-во символов на экране в TXT
 		#define hscrsze 20														//sps:	Кол-во символов на экране в HEX
@@ -412,7 +412,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					{
 						sprintf(offset,"");										//sps: Чистим фсе
 						sprintf(hexstr,"");
-						sprintf(msg,"");
+						memset(msg,0,scrsize+20);	//	sprintf(msg,"");
 
 //-----------------------------------------------------------------------------------------------
 						for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
@@ -436,6 +436,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							sprintf(msg,"%s%s",msg,hexstr);									//sps: Клеем текстовый блок
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+						sprintf(msg,"%s\0",msg);
 //-----------------------------------------------------------------------------------------------
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
@@ -531,16 +532,17 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
 								{
 //----------------------------------------------------------------------------------------------
-									sprintf(msg,"");										//sps: Чистим фсе
-									for(int i=point;i<point+scrsize;i++)					//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
+									memset(msg,0,scrsize+20);	//	sprintf(msg,"");		//sps: Чистим фсе
+									int i;
+									for(i=point;i<point+scrsize;i++)					//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
 									{
 										if (i>=size) break;									//sps: Конец файла?  Ну так валим отсюда
 										if(wbuf[i]<' ')
-										{sprintf(msg,"%s ",msg);}
+										{ msg[i-point]=' '; }
 										else
-										{sprintf(msg,"%s%c",msg,wbuf[i]);}
+										{ msg[i-point]=wbuf[i]; }
 									}
-									sprintf(msg,"%s\0",msg);
+									msg[i-point]=0;
 //----------------------------------------------------------------------------------------------
 									MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
 
@@ -563,7 +565,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											DBGF("point = %d %d",point,gpoint);
 											if (gpoint<=offs && offs!=0)
 											{
-												point=hsize+tstrsz;
+												point+=hsize; //+tstrsz;
 												offs-=hsize;
 												ReGrab();
 											};
@@ -575,7 +577,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											DBGF("point = %d %d",point,gpoint);
 											if (gpoint+scrsize>=offs+wsize)
 											{
-												point=hsize-75;
+												point-=hsize; //-tstrsz*3;
 												offs+=hsize;
 												ReGrab();
 											};
@@ -609,7 +611,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 			sLCDUI_Window* window = LCDUI_Supervisor_GetMyWindow();
 
-			ReGrab();	//sps: Захватываем часть файла в скользящий буфер
+			ReGrab();	//sps: Захватываем первую часть файла в скользящий буфер
 
 			for(;;)
 			{
