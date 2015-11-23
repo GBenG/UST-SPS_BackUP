@@ -403,7 +403,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;
 
-				ReGrab();	//sps: Захватываем часть файла в скользящий буфер
+		//		ReGrab();	//sps: Захватываем часть файла в скользящий буфер
 
 				for (;;) {
 
@@ -524,7 +524,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 							if(msg==NULL) return KEY_NONE;
 
-							ReGrab();	//sps: Захватываем часть файла в скользящий буфер
+					//		ReGrab();	//sps: Захватываем часть файла в скользящий буфер
 
 //-----------------------------------------------------------------------------------------------
 							for (;;) {
@@ -608,6 +608,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 //-----------------------------------------------------------------------------------------------
 			sLCDUI_Window* window = LCDUI_Supervisor_GetMyWindow();
+
+			ReGrab();	//sps: Захватываем часть файла в скользящий буфер
+
 			for(;;)
 			{
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
