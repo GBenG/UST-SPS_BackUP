@@ -338,14 +338,18 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		#define wsize 540						//sps:	Размер буфера
-		#define hsize wsize/2					//sps:	Размер оловины буфера
+		#define wsize 270														//sps:	Размер буфера
+		#define hsize wsize/2													//sps:	Размер половины буфера
+		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT						//sps:	Кол-во символов на экране в TXT
+		#define hscrsze 20														//sps:	Кол-во символов на экране в HEX
 
+//-----------------------------------------------------------------------------------------------
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
 
-		unsigned int len;					//sps:	Возврат прочитанных байт
-		unsigned int offs=0;				//sps:	Смещение буфера по файлу
-		unsigned int grab;					//sps:	Кол-во загружаеммых в буфер байт
+		unsigned int len;						//sps:	Возврат прочитанных байт
+		unsigned int offs=0;					//sps:	Смещение буфера по файлу
+		unsigned int grab;						//sps:	Кол-во загружаеммых в буфер байт
+
 
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
@@ -367,7 +371,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
 					}
 
-						f_close(&fil);							//sps:	Закрываем файл
+						f_close(&fil);								//sps:	Закрываем файл
 
 					DBG("Buffer RELOAD >>>");
 					DBG("======================");
@@ -390,7 +394,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				bool need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
 				char*  offset=UNS_MALLOC(15+1);									//sps: Смещение номера считанного байта файла в НЕХ
 				char*  hexstr=UNS_MALLOC(15+1);									//sps: Сформированная строка на вывод в окно
-				char*  msg=UNS_MALLOC(80+20);										//sps: Сформированное сообщение для вывода на экран
+				char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
 
 				char*  hxblok=UNS_MALLOC(8+1);									//sps: Блок шестнадцтеричных значений считанных байт
 				char*  asblok=UNS_MALLOC(4+1);									//sps: Блок ASCII значений считанных байт
@@ -409,7 +413,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(msg,"");
 
 //-----------------------------------------------------------------------------------------------
-						for(int j=point;j<point+20;j+=4)									//sps: формируем пять строк
+						for(int j=point;j<point+hscrsze;j+=4)									//sps: формируем пять строк
 						{
 							sprintf(hxblok,"");												//sps: Чистим фсе
 							sprintf(asblok,"");
@@ -431,7 +435,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 //-----------------------------------------------------------------------------------------------
-						MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
+						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
 						Screen_Clear(screen);
 						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
@@ -439,20 +443,33 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						Screen_PutString(screen,offset,true);
 						Screen_PutString(screen,msg,false);
 
-						MUTEX_UNLOCK(window->mutex)								//sps: отдали мютекс окна
-						need_redraw=false;										//sps: закрыли иф, пока кнопку не ткнут
+						MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
+						need_redraw=false;													//sps: закрыли иф, пока кнопку не ткнут
 					}
 //-----------------------------------------------------------------------------------------------
-				eKey key = LCDUI_Window_FetchKey(window);						//sps: проверяем кнопочки
+				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
 							if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
-							{point-=4;}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && point+20 < size)
+							{
+								point-=4;
+								gpoint-=4;
+								DBGF("point = %d",point);
+								if (gpoint<=offs && offs!=0)
+								{
+									point=hsize+4;
+									offs-=hsize;
+									ReGrab();
+								};
+							}
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && gpoint+hscrsze < size)
 							{
 								point+=4;
-								if (point>=offs+wsize)
+								gpoint+=4;
+								DBGF("point = %d",point);
+								if (gpoint+hscrsze>=offs+wsize)
 								{
+									point=hsize-hscrsze;
 									offs+=hsize;
 									ReGrab();
 								};
@@ -501,7 +518,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							sScreen* screen = &window->screen;
 
 							bool need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
-							char*  msg=UNS_MALLOC(80+20);										//sps: Сформированное сообщение для вывода на экран
+							char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
 
 							if(msg==NULL) return KEY_NONE;
 
@@ -513,7 +530,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								{
 //----------------------------------------------------------------------------------------------
 									sprintf(msg,"");										//sps: Чистим фсе
-									for(int i=point;i<point+89;i++)							//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
+									for(int i=point;i<point+scrsize;i++)					//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
 									{
 										if (i>=size) break;									//sps: Конец файла?  Ну так валим отсюда
 										if(wbuf[i]<' ')
@@ -544,19 +561,19 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											DBGF("point = %d",point);
 											if (gpoint<=offs && offs!=0)
 											{
-												point=hsize+15; //150
+												point=hsize+15;
 												offs-=hsize;
 												ReGrab();
 											};
 										}
-										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && point+89 < size)
+										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && gpoint+scrsize < size)
 										{
 											point+=15;
 											gpoint+=15;
 											DBGF("point = %d",point);
-											if (gpoint+90>=offs+wsize)
+											if (gpoint+scrsize>=offs+wsize)
 											{
-												point=hsize-75;	//60
+												point=hsize-75;
 												offs+=hsize;
 												ReGrab();
 											};
@@ -594,12 +611,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
 				if(rkey==KEY_RSOFT)											//sps: Смена вида?
 				{
-					point=(point/4)*4;												//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+					gpoint=(gpoint/4)*4;												//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
 					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
-					point=(point/15)*15;									//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
+					gpoint=(gpoint/15)*15;									//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
 					}
 					else{break;}												//sps: Закрыть просмотр
 			}
