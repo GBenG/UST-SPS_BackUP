@@ -338,7 +338,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		#define wsize 270														//sps:	Размер буфера
+		#define wsize 1080														//sps:	Размер буфера
 		#define hsize wsize/2													//sps:	Размер половины буфера
 		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT						//sps:	Кол-во символов на экране в TXT
 		#define hscrsze 20														//sps:	Кол-во символов на экране в HEX
@@ -384,7 +384,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					DBGF("Offset => %d",offs);
 					DBGF("Wsize => %d",wsize);
 					DBGF("Hsize => %d",hsize);
-					DBGF("|%s|",wbuf);
+//					DBGF("|%s|",wbuf);
 					DBG("======================");
 			}
 //================================================================================================
@@ -456,7 +456,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								point-=hstrsz;
 								gpoint-=hstrsz;
-								DBGF("point = %d",point);
+								DBGF("point = %d %d",point,gpoint);
 								if (gpoint<=offs && offs!=0)
 								{
 									point=hsize+hstrsz;
@@ -468,7 +468,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								point+=hstrsz;
 								gpoint+=hstrsz;
-								DBGF("point = %d",point);
+								DBGF("point = %d %d",point,gpoint);
 								if (gpoint+hscrsze>=offs+wsize)
 								{
 									point=hsize-hscrsze;
@@ -560,7 +560,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										{
 											point-=tstrsz;
 											gpoint-=tstrsz;
-											DBGF("point = %d",point);
+											DBGF("point = %d %d",point,gpoint);
 											if (gpoint<=offs && offs!=0)
 											{
 												point=hsize+tstrsz;
@@ -572,7 +572,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										{
 											point+=tstrsz;
 											gpoint+=tstrsz;
-											DBGF("point = %d",point);
+											DBGF("point = %d %d",point,gpoint);
 											if (gpoint+scrsize>=offs+wsize)
 											{
 												point=hsize-75;
@@ -613,14 +613,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
 				if(rkey==KEY_RSOFT)											//sps: Смена вида?
 				{
-					gpoint=(gpoint/hstrsz)*hstrsz;												//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+				//	gpoint=(gpoint/hstrsz)*hstrsz;							//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+					point=(point/hstrsz)*hstrsz;
 
 					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
-					gpoint=(gpoint/tstrsz)*tstrsz;									//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
+				//	gpoint=(gpoint/tstrsz)*tstrsz;							//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
+					point=(point/tstrsz)*tstrsz;
 					}
-					else{break;}												//sps: Закрыть просмотр
+					else{break;}											//sps: Закрыть просмотр
 			}
 //-----------------------------------------------------------------------------------------------
 		UNS_FREE(wbuf);
