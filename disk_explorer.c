@@ -333,7 +333,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
-		int    			gpoint=0;				//sps: Позиция на которой сейчас отображаемый текст в файле
 		int    			size=fno->fsize;		//sps: Размер открываемого файла
 
 //-----------------------------------------------------------------------------------------------
@@ -380,7 +379,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					DBGF("Buf_start => %d",offs);
 					DBGF("Buf_end => %d",offs+len);
 					DBGF("Point_now => %d",point);
-					DBGF("Global_point => %d",gpoint);
+					DBGF("Global_point => %d",offs+point);
 					DBGF("Offset => %d",offs);
 					DBGF("Wsize => %d",wsize);
 					DBGF("Hsize => %d",hsize);
@@ -402,8 +401,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  asblok=UNS_MALLOC(hstrsz+1);								//sps: Блок ASCII значений считанных байт
 
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;
-
-		//		ReGrab();	//sps: Захватываем часть файла в скользящий буфер
 
 				for (;;) {
 
@@ -457,25 +454,29 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								if(point<hstrsz){								//sps: Выравниваем начало файла
 									point=hstrsz;
-									gpoint=hstrsz;
 								}else{
 									point-=hstrsz;
-									gpoint-=hstrsz;
 								}
-								DBGF("point = %d %d",point,gpoint);
-								if (gpoint<=offs && offs!=0)
+								DBGF("point = %d %d",point,offs+point);
+								if (offs+point<=offs && offs!=0)
 								{
 									point=hsize+hstrsz;
 									offs-=hsize;
 									ReGrab();
 								};
 							}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && gpoint+hscrsze < size)
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 							{
+						/*		if(size-(offs+point+hscrsze) < hstrsz){								//sps: Выравниваем конец файла
+									point=offs+point+hscrsze;
+								}else{
+									point+=hstrsz;
+								}*/
 								point+=hstrsz;
-								gpoint+=hstrsz;
-								DBGF("point = %d %d",point,gpoint);
-								if (gpoint+hscrsze>=offs+wsize)
+
+								DBGF("point = %d %d",point,offs+point);
+
+								if (offs+point+hscrsze>=offs+wsize)
 								{
 									point=hsize-hscrsze;
 									offs+=hsize;
@@ -530,8 +531,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 							if(msg==NULL) return KEY_NONE;
 
-					//		ReGrab();	//sps: Захватываем часть файла в скользящий буфер
-
 //-----------------------------------------------------------------------------------------------
 							for (;;) {
 								if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
@@ -567,27 +566,30 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										{
 											if(point<tstrsz){								//sps: Выравниваем начало файла
 												point=tstrsz;
-												gpoint=tstrsz;
 											}else{
 												point-=tstrsz;
-												gpoint-=tstrsz;
 											}
 
-											DBGF("point = %d %d",point,gpoint);
+											DBGF("point = %d %d",point,offs+point);
 
-											if (gpoint<=offs && offs!=0)
+											if (offs+point<=offs && offs!=0)
 											{
 												point+=hsize; //+tstrsz;
 												offs-=hsize;
 												ReGrab();
 											};
 										}
-										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && gpoint+scrsize < size)
+										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
 										{
-											point+=tstrsz;
-											gpoint+=tstrsz;
-											DBGF("point = %d %d",point,gpoint);
-											if (gpoint+scrsize>=offs+wsize)
+					/*						if(size-(offs+point+hscrsze) < tstrsz){								//sps: Выравниваем конец файла
+												point=offs+point+hscrsze;
+											}else{
+												point+=tstrsz;
+											}
+*/											point+=tstrsz;
+											DBGF("point = %d %d",point,offs+point);
+
+											if (offs+point+scrsize>=offs+wsize)
 											{
 												point-=hsize; //-tstrsz*3;
 												offs+=hsize;
@@ -630,14 +632,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
 				if(rkey==KEY_RSOFT)											//sps: Смена вида?
 				{
-					gpoint=(gpoint/hstrsz)*hstrsz;							//sps: Великий уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
-					point=(point/hstrsz)*hstrsz;
+
+					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
 					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
-					gpoint=(gpoint/tstrsz)*tstrsz;							//sps: Великий уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
-					point=(point/tstrsz)*tstrsz;
+					point=(point/tstrsz)*tstrsz;							//sps: Уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
 					}
 					else{break;}											//sps: Закрыть просмотр
 			}
