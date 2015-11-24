@@ -392,13 +392,15 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				sScreen* screen = &window->screen;
 
-				bool need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
-				char*  offset=UNS_MALLOC(tstrsz+1);								//sps: Смещение номера считанного байта файла в НЕХ
-				char*  hexstr=UNS_MALLOC(tstrsz+1);								//sps: Сформированная строка на вывод в окно
-				char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+				bool 	need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
+				char*  	offset=UNS_MALLOC(tstrsz+1);								//sps: Смещение номера считанного байта файла в НЕХ
+				char*  	hexstr=UNS_MALLOC(tstrsz+1);								//sps: Сформированная строка на вывод в окно
+				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
 
-				char*  hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
-				char*  asblok=UNS_MALLOC(hstrsz+1);								//sps: Блок ASCII значений считанных байт
+				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
+				char*  	asblok=UNS_MALLOC(hstrsz+1);								//sps: Блок ASCII значений считанных байт
+				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
+		//		char*	ptr=msg;
 
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;
 
@@ -407,30 +409,41 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
 					{
-						sprintf(offset,"");										//sps: Чистим фсе
-						sprintf(hexstr,"");
-						memset(msg,0,scrsize+20);	//	sprintf(msg,"");
+																				//sps: Чистим фсе
+						memset(offset,0,tstrsz+1);
+						//	sprintf(offset,"");
+						memset(hexstr,0,tstrsz+1);
+						//	sprintf(hexstr,"");
+						memset(msg,0,scrsize+20);			//	sprintf(msg,"");
 
 //-----------------------------------------------------------------------------------------------
 						for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
 						{
-							sprintf(hxblok,"");												//sps: Чистим фсе
-							sprintf(asblok,"");
+																	//sps: Чистим фсе
+							memset(hxblok,0,hstrsz*2+1);
+							//	sprintf(hxblok,"");
+							memset(asblok,0,hstrsz+1);
+							//	sprintf(asblok,"");
 
 							for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
 							{
-								sprintf(hxblok,"%s%02X",hxblok,wbuf[i]);					//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								hxblok[(i-j)*2]=twohex[0];
+								hxblok[(i-j)*2+1]=twohex[1];
 
 								if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
 								{
-									sprintf(asblok,"%s ",asblok);
+									asblok[i-j]=' ';
 								}else{
-									sprintf(asblok,"%s%c",asblok,wbuf[i]);
+									asblok[i-j]=wbuf[i];
 								}
 							}
 							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
 							sprintf(hexstr,"%c %s %s",offset[14],hxblok,asblok);			//sps: Клеем симпатичную строчку, а она ломается)
 							sprintf(msg,"%s%s",msg,hexstr);									//sps: Клеем текстовый блок
+
+
+						//	ptr+=sprintf(ptr,"%s",hexstr);
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						sprintf(msg,"%s\0",msg);
@@ -467,13 +480,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 							{
-							/*	if(size-(offs+point+hscrsze) < hstrsz){								//sps: Выравниваем конец файла
-									point=offs+point+hscrsze;
-								}else{
-									point+=hstrsz;
-								}*/
-								point+=hstrsz;
 
+								point+=hstrsz;
 								DBGF("point = %d %d",point,offs+point);
 
 								if (offs+point+hscrsze>=offs+wsize)
@@ -485,6 +493,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if (key == KEY_RSOFT)
 							{
+								UNS_FREE(twohex);
 								UNS_FREE(hexstr);
 								UNS_FREE(msg);
 								UNS_FREE(offset);
@@ -494,6 +503,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								break;
 							}
 							else if (key == KEY_LSOFT) {
+								UNS_FREE(twohex);
 								UNS_FREE(hexstr);
 								UNS_FREE(msg);
 								UNS_FREE(offset);
@@ -581,13 +591,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										}
 										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
 										{
-										/*	if(size-(offs+point+hscrsze) < tstrsz){								//sps: Выравниваем конец файла
-												point=size-tstrsz;
-											}else{
-												point+=tstrsz;
-											}*/
 											point+=tstrsz;
-
 											DBGF("point = %d %d",point,offs+point);
 
 											if (offs+point+scrsize>=offs+wsize)
