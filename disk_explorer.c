@@ -455,8 +455,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						{
 							if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 							{
-								point-=hstrsz;
-								gpoint-=hstrsz;
+								if(point<hstrsz){								//sps: Выравниваем начало файла
+									point=hstrsz;
+									gpoint=hstrsz;
+								}else{
+									point-=hstrsz;
+									gpoint-=hstrsz;
+								}
 								DBGF("point = %d %d",point,gpoint);
 								if (gpoint<=offs && offs!=0)
 								{
@@ -560,9 +565,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									{
 										if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 										{
-											point-=tstrsz;
-											gpoint-=tstrsz;
+											if(point<tstrsz){								//sps: Выравниваем начало файла
+												point=tstrsz;
+												gpoint=tstrsz;
+											}else{
+												point-=tstrsz;
+												gpoint-=tstrsz;
+											}
+
 											DBGF("point = %d %d",point,gpoint);
+
 											if (gpoint<=offs && offs!=0)
 											{
 												point+=hsize; //+tstrsz;
