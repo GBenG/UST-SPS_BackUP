@@ -467,7 +467,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 							{
-						/*		if(size-(offs+point+hscrsze) < hstrsz){								//sps: Выравниваем конец файла
+							/*	if(size-(offs+point+hscrsze) < hstrsz){								//sps: Выравниваем конец файла
 									point=offs+point+hscrsze;
 								}else{
 									point+=hstrsz;
@@ -581,12 +581,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										}
 										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
 										{
-					/*						if(size-(offs+point+hscrsze) < tstrsz){								//sps: Выравниваем конец файла
-												point=offs+point+hscrsze;
+										/*	if(size-(offs+point+hscrsze) < tstrsz){								//sps: Выравниваем конец файла
+												point=size-tstrsz;
 											}else{
 												point+=tstrsz;
-											}
-*/											point+=tstrsz;
+											}*/
+											point+=tstrsz;
+
 											DBGF("point = %d %d",point,offs+point);
 
 											if (offs+point+scrsize>=offs+wsize)
