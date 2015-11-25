@@ -441,7 +441,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
-						sprintf(msg,"%s\0",msg);
+						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 //-----------------------------------------------------------------------------------------------
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
@@ -541,9 +541,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
 								{
 //----------------------------------------------------------------------------------------------
-									memset(msg,0,scrsize+20);	//	sprintf(msg,"");		//sps: Чистим фсе
+									memset(msg,0,scrsize+20);								//sps: Чистим фсе
 									int i;
-									for(i=point;i<point+scrsize;i++)					//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
+									for(i=point;i<point+scrsize;i++)						//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
 									{
 										if (i>=size) break;									//sps: Конец файла?  Ну так валим отсюда
 										if(wbuf[i]<' ')
@@ -555,10 +555,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //----------------------------------------------------------------------------------------------
 									MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
 
-									Screen_Clear(screen);
-									Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
+										Screen_Clear(screen);
+										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
 
-									Screen_PutString(screen,msg,false);
+										Screen_PutString(screen,msg,false);
 
 									MUTEX_UNLOCK(window->mutex)								//sps: отдали мютекс окна
 									need_redraw=false;										//sps: закрыли иф, пока кнопку не ткнут
@@ -579,7 +579,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 											if (offs+point<=offs && offs!=0)
 											{
-												point+=hsize; //+tstrsz;
+												point+=hsize;
 												offs-=hsize;
 												ReGrab();
 											};
@@ -591,7 +591,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 											if (offs+point+scrsize>=offs+wsize)
 											{
-												point-=hsize; //-tstrsz*3;
+												point-=hsize;
 												offs+=hsize;
 												ReGrab();
 											};
