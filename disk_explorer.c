@@ -359,7 +359,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					FIL 	fil;
 					FRESULT fres=f_open(&fil,full_path,FA_READ);	//sps:	Открываем файл
 
-					if(fres==FR_OK)
+		/*			if(fres==FR_OK)
 					{
 
 						if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF
@@ -371,10 +371,31 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						fres=f_read(&fil,wbuf,grab,&len);			//sps:	Читаем из файла
 						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
 					}
+		 */
+					if(fres==FR_OK)
+					{
+																			//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
+						if(((fno->fsize)-offs)>=wsize){
+							if(offs!=0){grab=hsize;}else{grab=wsize;}
+						}else{
+							grab=((fno->fsize)-offs);
+						}
 
-						f_close(&fil);								//sps:	Закрываем файл
+						memcpy(wbuf,wbuf+hsize,hsize);						//sps:	Переносим нижние пол буфера вверх
 
-					DBG("Buffer RELOAD >>>");
+						f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
+
+						if(offs!=0){
+							fres=f_read(&fil,wbuf+hsize,grab,&len);			//sps:	Читаем из файла пол буфера
+						}else{
+							fres=f_read(&fil,wbuf,grab,&len);				//sps:	Читаем из файла целый буфер
+						}
+						sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
+					}
+
+						f_close(&fil);										//sps:	Закрываем файл
+
+		/*			DBG("Buffer RELOAD >>>");
 					DBG("======================");
 					DBGF("Buf_start => %d",offs);
 					DBGF("Buf_end => %d",offs+len);
@@ -384,7 +405,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					DBGF("Wsize => %d",wsize);
 					DBGF("Hsize => %d",hsize);
 //					DBGF("|%s|",wbuf);
-					DBG("======================");
+					DBG("======================");	*/
 			}
 //================================================================================================
 //================================================================================================ SPS :: HexViewer
