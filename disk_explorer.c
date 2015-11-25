@@ -392,58 +392,53 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				sScreen* screen = &window->screen;
 
-				bool 	need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
-				char*  	offset=UNS_MALLOC(tstrsz+1);								//sps: Смещение номера считанного байта файла в НЕХ
-				char*  	hexstr=UNS_MALLOC(tstrsz+1);								//sps: Сформированная строка на вывод в окно
+				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
+				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
+				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
 				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
 
 				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
-				char*  	asblok=UNS_MALLOC(hstrsz+1);								//sps: Блок ASCII значений считанных байт
+				char*  	asblok=UNS_MALLOC(hstrsz+1);							//sps: Блок ASCII значений считанных байт
 				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
-		//		char*	ptr=msg;
 
-				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;
+				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;	//sps: Проверяем что все создалось правильно
 
 				for (;;) {
 
-
 					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
 					{
-																				//sps: Чистим фсе
-						memset(offset,0,tstrsz+1);
-						//	sprintf(offset,"");
+
+						memset(offset,0,tstrsz+1);								//sps: Чистим фсе
 						memset(hexstr,0,tstrsz+1);
-						//	sprintf(hexstr,"");
-						memset(msg,0,scrsize+20);			//	sprintf(msg,"");
+						memset(msg,0,scrsize+20);
+
+						char*	pmsg=msg;										//sps: Создаем указатель для склеивания всех блоков в страницу
 
 //-----------------------------------------------------------------------------------------------
-						for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
+						for(int j=point;j<point+hscrsze;j+=hstrsz)				//sps: формируем пять строк
 						{
-																	//sps: Чистим фсе
-							memset(hxblok,0,hstrsz*2+1);
-							//	sprintf(hxblok,"");
-							memset(asblok,0,hstrsz+1);
-							//	sprintf(asblok,"");
 
-							for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
+							memset(hxblok,0,hstrsz*2+1);						//sps: Чистим фсе
+							memset(asblok,0,hstrsz+1);
+
+							for(int i=j;i<j+hstrsz;i++)							//sps: формируем hxblok и asblok
 							{
-								sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								sprintf(twohex,"%02X",wbuf[i]);					//sps: hxblok - шестнадцтеричная форма байт в ASCII
 								hxblok[(i-j)*2]=twohex[0];
 								hxblok[(i-j)*2+1]=twohex[1];
 
-								if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
+								if(wbuf[i]<' ')									//sps: asblok - ASCII имволы байт, с заменой спецсимволов
 								{
 									asblok[i-j]=' ';
 								}else{
 									asblok[i-j]=wbuf[i];
 								}
 							}
+
 							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
 							sprintf(hexstr,"%c %s %s",offset[14],hxblok,asblok);			//sps: Клеем симпатичную строчку, а она ломается)
-							sprintf(msg,"%s%s",msg,hexstr);									//sps: Клеем текстовый блок
+							pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
-
-						//	ptr+=sprintf(ptr,"%s",hexstr);
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						sprintf(msg,"%s\0",msg);
