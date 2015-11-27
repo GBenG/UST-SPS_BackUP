@@ -580,7 +580,102 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										Screen_Clear(screen);
 										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
 
-									//	Screen_PutString(screen,msg,false);					//sps: Отрисовка окна без курсором
+										Screen_PutString(screen,msg,false);					//sps: Отрисовка окна без курсором
+
+									MUTEX_UNLOCK(window->mutex)								//sps: отдали мютекс окна
+									need_redraw=false;										//sps: закрыли иф, пока кнопку не ткнут
+								}
+//-----------------------------------------------------------------------------------------------
+							eKey key = LCDUI_Window_FetchKey(window);						//sps: проверяем кнопочки
+									if (key != KEY_NONE)
+									{
+										if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
+										{
+
+											if(point<tstrsz){								//sps: Выравниваем начало файла
+												point=tstrsz;
+											}else{
+												point-=tstrsz;
+											}
+
+											DBGF("point = %d %d",point,offs+point);
+
+											if (offs+point<=offs && offs!=0)
+											{
+												point+=hsize;
+												offs-=hsize;
+												ReGrab();
+											}
+										}
+										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
+										{
+											point+=tstrsz;
+											DBGF("point = %d %d",point,offs+point);
+
+											if (offs+point+scrsize>=offs+wsize)
+											{
+												point-=hsize;
+												offs+=hsize;
+												ReGrab();
+											}
+										}
+										else if (key == KEY_RSOFT)
+										{
+											UNS_FREE(msg);
+											return key;
+											break;
+										}
+										else if (key == KEY_LSOFT)
+										{
+											UNS_FREE(msg);
+											return key;
+											break;
+										}
+										else if (key == KEY_PRINT)
+										{
+											printMessage(wbuf);
+										} else {
+											beepError();
+										}
+										need_redraw=true;
+										continue;
+									}
+//-----------------------------------------------------------------------------------------------
+							}
+							return KEY_NONE;
+						}
+//================================================================================================
+//================================================================================================ SPS :: TxtViewer
+			eKey TxtEdit(sLCDUI_Window* window) {
+
+							sScreen* screen = &window->screen;
+
+							bool need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
+							char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+
+							if(msg==NULL) return KEY_NONE;
+
+//-----------------------------------------------------------------------------------------------
+							for (;;) {
+								if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
+								{
+//----------------------------------------------------------------------------------------------
+									memset(msg,0,scrsize+20);								//sps: Чистим фсе
+									int i;
+									for(i=point;i<point+scrsize;i++)						//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
+									{
+										if (i>=size) break;									//sps: Конец файла?  Ну так валим отсюда
+										if(wbuf[i]<' ')
+										{ msg[i-point]=' '; }
+										else
+										{ msg[i-point]=wbuf[i]; }
+									}
+									msg[i-point]=0;
+//----------------------------------------------------------------------------------------------
+									MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
+
+										Screen_Clear(screen);
+										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
 
 										for(i=0;i<scrsize;i++)								//sps: Отрисовка окна с курсором
 										{
