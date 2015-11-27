@@ -333,6 +333,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
+		int    			cursor=0;				//sps: Позиция на которой сейчас курсор
 		int    			size=fno->fsize;		//sps: Размер открываемого файла
 
 //-----------------------------------------------------------------------------------------------
@@ -579,7 +580,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										Screen_Clear(screen);
 										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
 
-										Screen_PutString(screen,msg,false);
+									//	Screen_PutString(screen,msg,false);					//sps: Отрисовка окна без курсором
+
+										for(i=0;i<scrsize;i++)								//sps: Отрисовка окна с курсором
+										{
+											if(i==cursor){
+												Screen_PutChar(screen,msg[i],true);
+											}else{
+												Screen_PutChar(screen,msg[i],false);
+											}
+										}
 
 									MUTEX_UNLOCK(window->mutex)								//sps: отдали мютекс окна
 									need_redraw=false;										//sps: закрыли иф, пока кнопку не ткнут
@@ -590,6 +600,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									{
 										if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 										{
+										cursor-=tstrsz;
+										if(cursor<0)
+										{
+											cursor+=tstrsz;
+
 											if(point<tstrsz){								//sps: Выравниваем начало файла
 												point=tstrsz;
 											}else{
@@ -605,17 +620,31 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 												ReGrab();
 											};
 										}
+										}
 										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
 										{
-											point+=tstrsz;
-											DBGF("point = %d %d",point,offs+point);
-
-											if (offs+point+scrsize>=offs+wsize)
+											cursor+=tstrsz;
+											if(cursor>scrsize)
 											{
+												cursor-=tstrsz;
+												point+=tstrsz;
+												DBGF("point = %d %d",point,offs+point);
+
+												if (offs+point+scrsize>=offs+wsize)
+												{
 												point-=hsize;
-												offs+=hsize;
-												ReGrab();
-											};
+													offs+=hsize;
+													ReGrab();
+												}
+											}
+										}
+										else if ((key == KEY_LEFT) && cursor > 0)
+										{
+											cursor--;
+										}
+										else if ((key == KEY_RIGHT) && cursor < scrsize)
+										{
+											cursor++;
 										}
 										else if (key == KEY_RSOFT)
 										{
