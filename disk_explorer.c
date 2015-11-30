@@ -338,12 +338,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		#define wsize 1024														//sps:	Размер буфера
-		#define hsize wsize/2													//sps:	Размер половины буфера
-		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT						//sps:	Кол-во символов на экране в TXT
-		#define hscrsze 20														//sps:	Кол-во символов на экране в HEX
-		#define tstrsz 15														//sps:	Кол-во обрабатываемых символов в строке TXT
-		#define hstrsz 4														//sps:	Кол-во обрабатываемых символов в строке HEX
+		#define hsize 512													//sps:	Размер половины буфера
+		#define wsize hsize*2												//sps:	Размер буфера
+
+		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT					//sps:	Кол-во символов на экране в TXT
+		#define hscrsze 4*(LCD_CLIENT_HEIGHT-1)				//20			//sps:	Кол-во символов на экране в HEX
+		#define tstrsz	LCD_CLIENT_WIDTH									//sps:	Кол-во обрабатываемых символов в строке TXT
+		#define hstrsz 	4													//sps:	Кол-во обрабатываемых символов в строке HEX
 
 //-----------------------------------------------------------------------------------------------
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
@@ -423,6 +424,24 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  	asblok=UNS_MALLOC(hstrsz+1);							//sps: Блок ASCII значений считанных байт
 				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
 
+//-----------------------------------------------------------------------------------------------
+				int 	spcount2 = (LCD_CLIENT_WIDTH-13)/2;						//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+				int 	spcount1 = (LCD_CLIENT_WIDTH-13)-spcount2;
+				char*  	space1=UNS_MALLOC(spcount1+1);							//sps:	Выделяем место под пробелы первого столбца
+				char*  	space2=UNS_MALLOC(spcount2+1);							//sps:	Выделяем место под пробелы второго столбца
+
+				DBGF("space 1,2 = %d %d",spcount1,spcount2);
+
+				memset(space1,0,spcount1+1);
+				memset(space2,0,spcount2+1);
+
+				for(int i=0;i<spcount1;i++)
+				{
+					if(spcount1-i > 0)space1[i] = ' ';							//sps: Набиваем пробелы для первого и второго столбца
+					if(spcount2-i > 0)space2[i] = ' ';
+				}
+//-----------------------------------------------------------------------------------------------
+
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;	//sps: Проверяем что все создалось правильно
 
 				for (;;) {
@@ -458,7 +477,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 
 							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
-							sprintf(hexstr,"%c %s %s",offset[14],hxblok,asblok);			//sps: Клеем симпатичную строчку, а она ломается)
+						//	sprintf(hexstr,"%c %s %s",offset[14],hxblok,asblok);			//sps: Клеем симпатичную строчку, а она ломается)
+
+							//sps: Клеем симпатичную строчку, а она ломается)
+							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
+
 							pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
 						}
@@ -516,6 +539,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(offset);
 								UNS_FREE(hxblok);
 								UNS_FREE(asblok);
+								UNS_FREE(space1);
+								UNS_FREE(space2);
 								return key;
 								break;
 							}
@@ -526,6 +551,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(offset);
 								UNS_FREE(hxblok);
 								UNS_FREE(asblok);
+								UNS_FREE(space1);
+								UNS_FREE(space2);
 								return key;
 								break;
 							}
