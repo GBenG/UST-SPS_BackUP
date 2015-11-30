@@ -425,14 +425,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
 
 //-----------------------------------------------------------------------------------------------
-				int 	spcount2 = (LCD_CLIENT_WIDTH-13)/2;						//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
-				int 	spcount1 = (LCD_CLIENT_WIDTH-13)-spcount2;
-				char*  	space1=UNS_MALLOC(spcount1+1);							//sps:	Выделяем место под пробелы первого столбца
-				char*  	space2=UNS_MALLOC(spcount2+1);							//sps:	Выделяем место под пробелы второго столбца
+				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2					//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
+				char*  		space1=UNS_MALLOC(spcount1+1);						//sps:	Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(spcount2+1);						//sps:	Выделяем место под пробелы второго столбца
 
-				DBGF("space 1,2 = %d %d",spcount1,spcount2);
-
-				memset(space1,0,spcount1+1);
+				memset(space1,0,spcount1+1);									//sps: Чистим фсе
 				memset(space2,0,spcount2+1);
 
 				for(int i=0;i<spcount1;i++)
@@ -442,7 +440,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				}
 //-----------------------------------------------------------------------------------------------
 
-				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL) return KEY_NONE;	//sps: Проверяем что все создалось правильно
+				//sps: Проверяем что все создалось правильно
+				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
 
 				for (;;) {
 
@@ -477,7 +476,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 
 							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
-						//	sprintf(hexstr,"%c %s %s",offset[14],hxblok,asblok);			//sps: Клеем симпатичную строчку, а она ломается)
 
 							//sps: Клеем симпатичную строчку, а она ломается)
 							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
