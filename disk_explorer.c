@@ -334,6 +334,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
 		int    			cursor=0;				//sps: Позиция на которой сейчас основной курсор
+		int    			slcurs=0;				//sps: Позиция на которой сейчас вторичный курсор
 		int    			size=fno->fsize;		//sps: Размер открываемого файла
 
 //-----------------------------------------------------------------------------------------------
@@ -755,14 +756,19 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							Screen_Clear(screen);
 							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
 
-							cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию курсора по координатам
+							cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
+
+							scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
+								scx=spcount1+hstrsz*2+spcount2+mcx/2;
+							slcurs=LCD_CLIENT_WIDTH*scy+scx;
+
 							DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
 
 							Screen_PutString(screen,offset,true);
 
 							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
 							{
-								if(i==cursor){
+								if(i==cursor || i==slcurs){
 									Screen_PutChar(screen,msg[i],true);
 								}else{
 									Screen_PutChar(screen,msg[i],false);
@@ -776,26 +782,31 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
-							if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
+							if ((key == KEY_UP || key==KEY_PGUP) /*&& point >= 0*/)
 							{
 								mcy--;
 
-								if(mcy<0)										//sps: Если дошли до края экрана
+								if(mcy<0)													//sps: Если дошли до края экрана
 								{
-									mcy++;										//sps: Возвращаем курсор на первую строку
+									mcy++;													//sps: Возвращаем курсор на первую строку
 
-									if(point<hstrsz){							//sps: Выравниваем начало файла
-										point=hstrsz;
-									}else{
-										point-=hstrsz;
-									}
-									DBGF("point = %d %d",point,offs+point);
-									if (offs+point<=offs && offs!=0)
+									if (point > 0)											//sps: Контроллируем верхний край файла
 									{
-										point=hsize+hstrsz;
-										offs-=hsize;
-										ReGrab();
-									};
+										if(point<hstrsz){									//sps: Выравниваем начало файла
+											point=hstrsz;
+										}else{
+											point-=hstrsz;
+										}
+
+										DBGF("point = %d %d",point,offs+point);
+
+										if (offs+point<=offs && offs!=0)					//sps: Буфер закончился, двигаем его вверх, если есть куда
+										{
+											point=hsize+hstrsz;
+											offs-=hsize;
+											ReGrab();
+										}
+									}
 								}
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
