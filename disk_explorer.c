@@ -333,7 +333,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
-		int    			cursor=0;				//sps: Позиция на которой сейчас курсор
+		int    			cursor=0;				//sps: Позиция на которой сейчас основной курсор
 		int    			size=fno->fsize;		//sps: Размер открываемого файла
 
 //-----------------------------------------------------------------------------------------------
@@ -670,6 +670,193 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							return KEY_NONE;
 						}
 //================================================================================================
+//================================================================================================ SPS :: HexViewer
+			eKey HexEdit(sLCDUI_Window* window) {
+
+				sScreen* screen = &window->screen;
+
+				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
+				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
+				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
+				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+
+				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
+				char*  	asblok=UNS_MALLOC(hstrsz+1);							//sps: Блок ASCII значений считанных байт
+				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
+
+//-----------------------------------------------------------------------------------------------
+				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2					//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
+				char*  		space1=UNS_MALLOC(spcount1+1);						//sps:	Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(spcount2+1);						//sps:	Выделяем место под пробелы второго столбца
+
+				memset(space1,0,spcount1+1);									//sps: Чистим фсе
+				memset(space2,0,spcount2+1);
+
+				for(int i=0;i<spcount1;i++)
+				{
+					if(spcount1-i > 0)space1[i] = ' ';							//sps: Набиваем пробелы для первого и второго столбца
+					if(spcount2-i > 0)space2[i] = ' ';
+				}
+//-----------------------------------------------------------------------------------------------
+
+				int		mcx=spcount1+1, mcy=0;									//sps: Координаты основного указателя
+				int		scx=0, scy=0;											//sps: Координаты вторичного указателя
+
+//-----------------------------------------------------------------------------------------------
+				//sps: Проверяем что все создалось правильно
+				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
+
+				for (;;) {
+
+					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
+					{
+
+						memset(offset,0,tstrsz+1);								//sps: Чистим фсе
+						memset(hexstr,0,tstrsz+1);
+						memset(msg,0,scrsize+20);
+
+						char*	pmsg=msg;										//sps: Создаем указатель для склеивания всех блоков в страницу
+
+//-----------------------------------------------------------------------------------------------
+						for(int j=point;j<point+hscrsze;j+=hstrsz)				//sps: формируем пять строк
+						{
+
+							memset(hxblok,0,hstrsz*2+1);						//sps: Чистим фсе
+							memset(asblok,0,hstrsz+1);
+
+							for(int i=j;i<j+hstrsz;i++)							//sps: формируем hxblok и asblok
+							{
+								sprintf(twohex,"%02X",wbuf[i]);					//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								hxblok[(i-j)*2]=twohex[0];
+								hxblok[(i-j)*2+1]=twohex[1];
+
+								if(wbuf[i]<' ')									//sps: asblok - ASCII имволы байт, с заменой спецсимволов
+								{
+									asblok[i-j]=' ';
+								}else{
+									asblok[i-j]=wbuf[i];
+								}
+							}
+
+							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
+
+							//sps: Клеем симпатичную строчку, а она ломается)
+							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
+
+							pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
+
+						}
+						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
+//-----------------------------------------------------------------------------------------------
+						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
+
+							Screen_Clear(screen);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+
+							cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию курсора по координатам
+							DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
+
+							Screen_PutString(screen,offset,true);
+
+							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
+							{
+								if(i==cursor){
+									Screen_PutChar(screen,msg[i],true);
+								}else{
+									Screen_PutChar(screen,msg[i],false);
+								}
+							}
+
+						MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
+						need_redraw=false;													//sps: закрыли иф, пока кнопку не ткнут
+					}
+//-----------------------------------------------------------------------------------------------
+				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
+						if (key != KEY_NONE)
+						{
+							if ((key == KEY_UP || key==KEY_PGUP) /*&& point > 0*/)
+							{
+								mcy--;
+							/*	if(point<hstrsz){								//sps: Выравниваем начало файла
+									point=hstrsz;
+								}else{
+									point-=hstrsz;
+								}
+								DBGF("point = %d %d",point,offs+point);
+								if (offs+point<=offs && offs!=0)
+								{
+									point=hsize+hstrsz;
+									offs-=hsize;
+									ReGrab();
+								};*/
+							}
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN)/*&& offs+point+hscrsze < size*/)
+							{
+								mcy++;
+						/*		point+=hstrsz;
+								DBGF("point = %d %d",point,offs+point);
+
+								if (offs+point+hscrsze>=offs+wsize)
+								{
+									point=hsize-hscrsze;
+									offs+=hsize;
+									ReGrab();
+								};*/
+							}
+							else if ((key == KEY_LEFT)/* && cursor > 0*/ && mcx>spcount1+1)
+							{
+								mcx--;
+							}
+							else if ((key == KEY_RIGHT) /*&& cursor < scrsize*/ && mcx<spcount1+hstrsz*2)
+							{
+								mcx++;
+							}
+							else if (key == KEY_RSOFT)
+							{
+								UNS_FREE(twohex);
+								UNS_FREE(hexstr);
+								UNS_FREE(msg);
+								UNS_FREE(offset);
+								UNS_FREE(hxblok);
+								UNS_FREE(asblok);
+								UNS_FREE(space1);
+								UNS_FREE(space2);
+								return key;
+								break;
+							}
+							else if (key == KEY_LSOFT) {
+								UNS_FREE(twohex);
+								UNS_FREE(hexstr);
+								UNS_FREE(msg);
+								UNS_FREE(offset);
+								UNS_FREE(hxblok);
+								UNS_FREE(asblok);
+								UNS_FREE(space1);
+								UNS_FREE(space2);
+								return key;
+								break;
+							}
+							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄]
+							{
+								msg[0]='\n';
+								msg[15]='\n';
+								msg[30]='\n';
+								msg[45]='\n';
+								msg[60]='\n';
+								printMessage(msg);
+							} else {
+								beepError();
+							}
+							need_redraw=true;
+							continue;
+						}
+//-----------------------------------------------------------------------------------------------
+				}
+				return KEY_NONE;
+			}
+//================================================================================================
 //================================================================================================ SPS :: TxtViewer
 			eKey TxtEdit(sLCDUI_Window* window) {
 
@@ -677,6 +864,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 							bool need_redraw=true;											//sps: Пнуть в ТРУ если нужно перисовать окошко
 							char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+
+//-----------------------------------------------------------------------------------------------
+
+				int		mcx=7, mcy=3;											//sps: Координаты основного указателя
+
+//-----------------------------------------------------------------------------------------------
 
 							if(msg==NULL) return KEY_NONE;
 
@@ -702,6 +895,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										Screen_Clear(screen);
 										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
 
+											cursor=LCD_CLIENT_WIDTH*mcy+mcx;				//sps: Вычесляем позицию курсора по координатам
+
+											DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
+
 										for(i=0;i<scrsize;i++)								//sps: Отрисовка окна с курсором
 										{
 											if(i==cursor){
@@ -718,9 +915,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							eKey key = LCDUI_Window_FetchKey(window);						//sps: проверяем кнопочки
 									if (key != KEY_NONE)
 									{
-										if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
+										if ((key == KEY_UP || key==KEY_PGUP) /*&& point > 0*/)
 										{
+
 										cursor-=tstrsz;
+										mcy--;
+
 										if(cursor<0)
 										{
 											cursor+=tstrsz;
@@ -741,12 +941,15 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											};
 										}
 										}
-										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
+										else if ((key == KEY_DOWN || key == KEY_PGDOWN) /* && offs+point+scrsize < size*/)
 										{
 											cursor+=tstrsz;
+											mcy++;
+
 											if(cursor>scrsize)
 											{
 												cursor-=tstrsz;
+
 												point+=tstrsz;
 												DBGF("point = %d %d",point,offs+point);
 
@@ -761,10 +964,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										else if ((key == KEY_LEFT) && cursor > 0)
 										{
 											cursor--;
+											mcx--;
 										}
 										else if ((key == KEY_RIGHT) && cursor < scrsize)
 										{
 											cursor++;
+											mcx++;
 										}
 										else if (key == KEY_RSOFT)
 										{
@@ -800,12 +1005,15 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			for(;;)
 			{
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
+			//	eKey rkey = TxtEdit(window);								//sps: Открываем TXT-редактор
 				if(rkey==KEY_RSOFT)											//sps: Смена вида?
 				{
 
 					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
-					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
+
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
 					point=(point/tstrsz)*tstrsz;							//sps: Уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
