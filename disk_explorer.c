@@ -776,40 +776,52 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
-							if ((key == KEY_UP || key==KEY_PGUP) /*&& point > 0*/)
+							if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 							{
 								mcy--;
-							/*	if(point<hstrsz){								//sps: Выравниваем начало файла
-									point=hstrsz;
-								}else{
-									point-=hstrsz;
-								}
-								DBGF("point = %d %d",point,offs+point);
-								if (offs+point<=offs && offs!=0)
-								{
-									point=hsize+hstrsz;
-									offs-=hsize;
-									ReGrab();
-								};*/
-							}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN)/*&& offs+point+hscrsze < size*/)
-							{
-								mcy++;
-						/*		point+=hstrsz;
-								DBGF("point = %d %d",point,offs+point);
 
-								if (offs+point+hscrsze>=offs+wsize)
+								if(mcy<0)										//sps: Если дошли до края экрана
 								{
-									point=hsize-hscrsze;
-									offs+=hsize;
-									ReGrab();
-								};*/
+									mcy++;										//sps: Возвращаем курсор на первую строку
+
+									if(point<hstrsz){							//sps: Выравниваем начало файла
+										point=hstrsz;
+									}else{
+										point-=hstrsz;
+									}
+									DBGF("point = %d %d",point,offs+point);
+									if (offs+point<=offs && offs!=0)
+									{
+										point=hsize+hstrsz;
+										offs-=hsize;
+										ReGrab();
+									};
+								}
 							}
-							else if ((key == KEY_LEFT)/* && cursor > 0*/ && mcx>spcount1+1)
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
+							{
+								mcy++;											//sps: Двигаем курсор вниз
+
+								if(mcy>(LCD_CLIENT_HEIGHT-2))					//sps: Если дошли до края экрана
+								{
+									mcy--;										//sps: Возвращаем курсор на последнюю строку
+
+									point+=hstrsz;								//sps: Двигаем экран
+									DBGF("point = %d %d",point,offs+point);
+
+									if (offs+point+hscrsze>=offs+wsize)			//sps: Если кончился буфер, загружаем новый кусок
+									{
+										point=hsize-hscrsze;
+										offs+=hsize;
+										ReGrab();
+									};
+								}
+							}
+							else if ((key == KEY_LEFT) && mcx>spcount1+1)
 							{
 								mcx--;
 							}
-							else if ((key == KEY_RIGHT) /*&& cursor < scrsize*/ && mcx<spcount1+hstrsz*2)
+							else if ((key == KEY_RIGHT) && mcx<spcount1+hstrsz*2)
 							{
 								mcx++;
 							}
