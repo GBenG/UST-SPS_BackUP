@@ -762,7 +762,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								scx=spcount1+hstrsz*2+spcount2+mcx/2;
 							slcurs=LCD_CLIENT_WIDTH*scy+scx;
 
-							DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
+					//		UINT icursor = point+mcy*hstrsz+mcx/2;	TODO Проблема в этом выражении, какое-то оно стремное
+							int icursor = 2;
+
+						//	DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
+							DBGF("HIDDEN COORDINATEs => %d", icursor)
 
 							Screen_PutString(screen,offset,true);
 
@@ -869,7 +873,30 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								msg[45]='\n';
 								msg[60]='\n';
 								printMessage(msg);
-							} else {
+							} else if (key == KEY_0) {
+								//
+							} else if (key == KEY_1) {
+								//
+							} else if (key == KEY_2) {
+								//
+							} else if (key == KEY_3) {
+								//
+							} else if (key == KEY_4) {
+								//
+							} else if (key == KEY_5) {
+								//
+							} else if (key == KEY_6) {
+								//
+							} else if (key == KEY_7) {
+								//
+							} else if (key == KEY_8) {
+								//
+							} else if (key == KEY_9) {
+								//
+							} else if (key == KEY_00){
+								//
+							}
+							else {
 								beepError();
 							}
 							need_redraw=true;
