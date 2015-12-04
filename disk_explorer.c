@@ -761,13 +761,22 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
 								scx=spcount1+hstrsz*2+spcount2+mcx/2;
 							slcurs=LCD_CLIENT_WIDTH*scy+scx;
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  [►☻◄ ЗОНА ЭКСПЕРЕМЕНТА ►☻◄]
 
-					//		UINT icursor = point+mcy*hstrsz+mcx/2;	TODO Проблема в этом выражении, какое-то оно стремное
-							int icursor = 2;
+							int icursor = point+mcy*hstrsz+mcx/2;							//sps: Вычесляем позицию урсора в буфере для замены симола
+							int hcursor = (mcy*hstrsz*2+mcx)-1;								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-						//	DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
-							DBGF("HIDDEN COORDINATEs => %d", icursor)
+							DBGF("MSGHEX => %c%c", msg[hcursor],msg[hcursor+1]);
+							char* testhex=UNS_MALLOC(2+1);
+							sprintf(testhex,"%c%c",msg[hcursor],msg[hcursor+1]);
 
+							int test = strtol(testhex, NULL, 16);								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
+							DBGF("TEST => %c", test)
+
+							DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
+							DBGF("HIDDEN COORDINATEs => char-%d hex-%d", icursor, hcursor)
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 							Screen_PutString(screen,offset,true);
 
 							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
