@@ -751,11 +751,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 //-----------------------------------------------------------------------------------------------
-						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
-
-							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
-
 							cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
 
 							scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
@@ -766,9 +761,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							int icursor = point+mcy*hstrsz+mcx/2;							//sps: Вычесляем позицию урсора в буфере для замены симола
 							int hcursor = (mcy*hstrsz*2+mcx)-1;								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-							DBGF("MSGHEX => %c%c", msg[hcursor],msg[hcursor+1]);
+							DBGF("MSGHEX => %c%c", msg[hcursor+1],msg[hcursor+2]);
 							char* testhex=UNS_MALLOC(2+1);
-							sprintf(testhex,"%c%c",msg[hcursor],msg[hcursor+1]);
+							sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);
 
 							int test = strtol(testhex, NULL, 16);								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 							DBGF("TEST => %c", test)
@@ -777,6 +772,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							DBGF("HIDDEN COORDINATEs => char-%d hex-%d", icursor, hcursor)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+							MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
+
+							Screen_Clear(screen);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+
 							Screen_PutString(screen,offset,true);
 
 							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
