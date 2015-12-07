@@ -411,6 +411,29 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					DBG("======================");	*/
 			}
 //================================================================================================
+//================================================================================================
+			void ReDrawHEX(sLCDUI_Window* window, char* msg, char* offset)
+			{
+				sScreen* screen = &window->screen;
+				MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
+
+				Screen_Clear(screen);
+				Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+
+				Screen_PutString(screen,offset,true);
+
+				for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
+				{
+					if(i==cursor || i==slcurs){
+						Screen_PutChar(screen,msg[i],true);
+					}else{
+						Screen_PutChar(screen,msg[i],false);
+					}
+				}
+
+				MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
+			}
+//================================================================================================
 //================================================================================================ SPS :: HexViewer
 			eKey HexView(sLCDUI_Window* window) {
 
@@ -674,8 +697,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================ SPS :: HexViewer
 			eKey HexEdit(sLCDUI_Window* window) {
 
-				sScreen* screen = &window->screen;
-
 				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
 				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
 				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
@@ -751,11 +772,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 //-----------------------------------------------------------------------------------------------
+
 							cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
 
 							scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
 								scx=spcount1+hstrsz*2+spcount2+mcx/2;
 							slcurs=LCD_CLIENT_WIDTH*scy+scx;
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  [►☻◄ ЗОНА ЭКСПЕРЕМЕНТА ►☻◄]
 
 							int icursor = point+mcy*hstrsz+mcx/2;							//sps: Вычесляем позицию урсора в буфере для замены симола
@@ -765,7 +788,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							char* testhex=UNS_MALLOC(2+1);
 							sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);
 
-							int test = strtol(testhex, NULL, 16);								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
+							int test = strtol(testhex, NULL, 16);							//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 							DBGF("TEST => %c", test)
 
 							DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
@@ -773,24 +796,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-							MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
+							ReDrawHEX(window, msg, offset);
+							need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
 
-							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
-
-							Screen_PutString(screen,offset,true);
-
-							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
-							{
-								if(i==cursor || i==slcurs){
-									Screen_PutChar(screen,msg[i],true);
-								}else{
-									Screen_PutChar(screen,msg[i],false);
-								}
-							}
-
-						MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
-						need_redraw=false;													//sps: закрыли иф, пока кнопку не ткнут
 					}
 //-----------------------------------------------------------------------------------------------
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
