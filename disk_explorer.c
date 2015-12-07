@@ -412,7 +412,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			}
 //================================================================================================
 //================================================================================================
-			void ReDrawHEX(sLCDUI_Window* window, char* msg, char* offset)
+/*			void ReDrawHEX(sLCDUI_Window* window, char* msg, char* offset)
 			{
 				sScreen* screen = &window->screen;
 				MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
@@ -432,7 +432,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				}
 
 				MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
-			}
+			}*/
 //================================================================================================
 //================================================================================================ SPS :: HexViewer
 			eKey HexView(sLCDUI_Window* window) {
@@ -724,15 +724,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				int		mcx=spcount1+1, mcy=0;									//sps: Координаты основного указателя
 				int		scx=0, scy=0;											//sps: Координаты вторичного указателя
+				int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
+				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
 //-----------------------------------------------------------------------------------------------
 				//sps: Проверяем что все создалось правильно
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
 
-				for (;;) {
 
-					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
-					{
 
 						memset(offset,0,tstrsz+1);								//sps: Чистим фсе
 						memset(hexstr,0,tstrsz+1);
@@ -772,33 +771,58 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 //-----------------------------------------------------------------------------------------------
-
-							cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
-
-							scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
-								scx=spcount1+hstrsz*2+spcount2+mcx/2;
-							slcurs=LCD_CLIENT_WIDTH*scy+scx;
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  [►☻◄ ЗОНА ЭКСПЕРЕМЕНТА ►☻◄]
 
-							int icursor = point+mcy*hstrsz+mcx/2;							//sps: Вычесляем позицию урсора в буфере для замены симола
-							int hcursor = (mcy*hstrsz*2+mcx)-1;								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-							DBGF("MSGHEX => %c%c", msg[hcursor+1],msg[hcursor+2]);
-							char* testhex=UNS_MALLOC(2+1);
-							sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);
 
-							int test = strtol(testhex, NULL, 16);							//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
-							DBGF("TEST => %c", test)
+					//		DBGF("MSGHEX => %c%c", msg[hcursor+1],msg[hcursor+2]);
+					//		char* testhex=UNS_MALLOC(2+1);
+					//		sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);
 
-							DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
-							DBGF("HIDDEN COORDINATEs => char-%d hex-%d", icursor, hcursor)
+					//		int test = strtol(testhex, NULL, 16);							//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
+					//		DBGF("TEST => %c", test)
+
+					//		DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
+					//		DBGF("HIDDEN COORDINATEs => char-%d hex-%d", icursor, hcursor)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+				for (;;)
+				{
+					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
+					{
+						//	ReDrawHEX(window, msg, offset);
+//-----------------------------------------------------------------------------------------------
+						cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
+						scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
+						scx=spcount1+hstrsz*2+spcount2+mcx/2;
 
-							ReDrawHEX(window, msg, offset);
+						icursor = point+mcy*hstrsz+mcx/2;							//sps: Вычесляем позицию урсора в буфере для замены симола
+						hcursor = (mcy*hstrsz*2+mcx)-1;								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
+//-----------------------------------------------------------------------------------------------
+
+						slcurs=LCD_CLIENT_WIDTH*scy+scx;
+						sScreen* screen = &window->screen;
+
+//-----------------------------------------------------------------------------------------------
+						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
+
+										Screen_Clear(screen);
+										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+
+										Screen_PutString(screen,offset,true);
+
+										for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
+										{
+											if(i==cursor || i==slcurs){
+												Screen_PutChar(screen,msg[i],true);
+											}else{
+												Screen_PutChar(screen,msg[i],false);
+											}
+										}
+
+										MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
+//-----------------------------------------------------------------------------------------------
 							need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
-
 					}
 //-----------------------------------------------------------------------------------------------
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
@@ -891,28 +915,22 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								msg[45]='\n';
 								msg[60]='\n';
 								printMessage(msg);
-							} else if (key == KEY_0) {
-								//
-							} else if (key == KEY_1) {
-								//
-							} else if (key == KEY_2) {
-								//
-							} else if (key == KEY_3) {
-								//
-							} else if (key == KEY_4) {
-								//
-							} else if (key == KEY_5) {
-								//
-							} else if (key == KEY_6) {
-								//
-							} else if (key == KEY_7) {
-								//
-							} else if (key == KEY_8) {
-								//
-							} else if (key == KEY_9) {
-								//
-							} else if (key == KEY_00){
-								//
+							} else if (key == KEY_0) {	msg[hcursor+1]='0';
+							} else if (key == KEY_1) {	msg[hcursor+1]='1';
+							} else if (key == KEY_2) {	msg[hcursor+1]='2';
+							} else if (key == KEY_3) {	msg[hcursor+1]='3';
+							} else if (key == KEY_4) {	msg[hcursor+1]='4';
+							} else if (key == KEY_5) {	msg[hcursor+1]='5';
+
+								char* testhex=UNS_MALLOC(2+1);
+								sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);
+								msg[scx] = strtol(testhex, NULL, 16);
+
+							} else if (key == KEY_6) {	msg[hcursor+1]='6';
+							} else if (key == KEY_7) {	msg[hcursor+1]='7';
+							} else if (key == KEY_8) {	msg[hcursor+1]='8';
+							} else if (key == KEY_9) {	msg[hcursor+1]='9';
+							} else if (key == KEY_00){	msg[hcursor+1]='A';
 							}
 							else {
 								beepError();
