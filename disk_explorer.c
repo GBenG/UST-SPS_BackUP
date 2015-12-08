@@ -393,23 +393,21 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
 				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-				icursor = (point+mcy*hstrsz+mcx/2)-1;								//sps: Вычесляем позицию урсора в буфере для замены симола
+				icursor = (point+mcy*hstrsz+mcx/2)-1;							//sps: Вычесляем позицию урсора в буфере для замены симола
 				hcursor = (LCD_CLIENT_WIDTH*mcy+mcx)-1;
 
 				msg[hcursor+1]=key;												//sps: Заменяем символ
 
-				if(((mcy*hstrsz*2+mcx)-1)&1){													//sps: Определяем на какой части хекс-представления символа находится курсор
+				if(((mcy*hstrsz*2+mcx)-1)&1){									//sps: Определяем на какой части хекс-представления символа находится курсор
 					sprintf(hidhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);		//sps: Забираем два нужных символа при нечетином курсоре
 				}else{
 					sprintf(hidhex,"%c%c",msg[hcursor],msg[hcursor+1]);			//sps: Забираем два нужных символа при четином курсоре
 				}
 
 				msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
-				wbuf[icursor] = strtol(hidhex, NULL, 16);
+				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: ЗАписываем новый символ в буфер
 
 				UNS_FREE(hidhex);
-
-			//	cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
 			}
 //================================================================================================
 //================================================================================================ SPS :: Hex-просмотрщик
@@ -754,54 +752,42 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						need_reconstruct=false;												//sps: Заткнем этот блок
 					}
 //-----------------------------------------------------------------------------------------------
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  [►☻◄ ЗОНА ЭКСПЕРЕМЕНТА ►☻◄]
-
-					//		DBGF("MSGHEX => %c%c", msg[hcursor+1],msg[hcursor+2]);
-					//		char* testhex=UNS_MALLOC(2+1);
-					//		sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);
-
-					//		int test = strtol(testhex, NULL, 16);							//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
-					//		DBGF("TEST => %c", test)
-
-					//		DBGF("COORDINATEs => x=%d y=%d cursor=%d", mcx,mcy,cursor)
-					//		DBGF("HIDDEN COORDINATEs => char-%d hex-%d", icursor, hcursor)
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
-						//	ReDrawHEX(window, msg, offset);
-//-----------------------------------------------------------------------------------------------
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
 						scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
 						scx=spcount1+hstrsz*2+spcount2+mcx/2;
 						slcurs=LCD_CLIENT_WIDTH*scy+scx;
+
 //-----------------------------------------------------------------------------------------------
 
 						sScreen* screen = &window->screen;
 
-//-----------------------------------------------------------------------------------------------
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
-										Screen_Clear(screen);
-										Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+							Screen_Clear(screen);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
 
-										Screen_PutString(screen,offset,true);
+							Screen_PutString(screen,offset,true);
 
-										for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
-										{
-											if(i==cursor || i==slcurs){
-												Screen_PutChar(screen,msg[i],true);
-											}else{
-												Screen_PutChar(screen,msg[i],false);
-											}
-										}
+							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
+							{
+								if(i==cursor || i==slcurs){
+									Screen_PutChar(screen,msg[i],true);
+								}else{
+									Screen_PutChar(screen,msg[i],false);
+								}
+							}
 
-										MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
+						MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
+
 //-----------------------------------------------------------------------------------------------
+
 							need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
 					}
+
 //-----------------------------------------------------------------------------------------------
+
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
@@ -906,9 +892,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							} else if (key == KEY_7) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'7');
 							} else if (key == KEY_8) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'8');
 							} else if (key == KEY_9) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'9');
-							} else if (key == KEY_00){	ChangeCHAR(msg,mcx,mcy,scx,scy,'A');
-							}
-							else {
+							} else if (key == KEY_00){	ChangeCHAR(msg,mcx,mcy,scx,scy,'A'); //sps: TODO эту функцию заменить на функцию ввода 'ABCDEF'
+							} else {
 								beepError();
 							}
 							need_redraw=true;
