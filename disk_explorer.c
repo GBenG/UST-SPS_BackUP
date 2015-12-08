@@ -360,52 +360,58 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			void ReGrab(void)
 			{
 					FIL 	fil;
-					FRESULT fres=f_open(&fil,full_path,FA_READ);	//sps:	Открываем файл
+					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл
 
 					if(fres==FR_OK)
 					{
-																			//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
+																				//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
 						if(((fno->fsize)-offs)>=wsize){
 							if(offs!=0){grab=hsize;}else{grab=wsize;}
 						}else{
 							grab=((fno->fsize)-offs);
 						}
 
-						memcpy(wbuf,wbuf+hsize,hsize);						//sps:	Переносим нижние пол буфера вверх
+						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
 
-						f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
+						f_lseek(&fil, offs);									//sps:	Сдвигаем позицию считывания
 
 						if(offs!=0){
-							fres=f_read(&fil,wbuf+hsize,grab,&len);			//sps:	Читаем из файла пол буфера
+							fres=f_read(&fil,wbuf+hsize,grab,&len);				//sps:	Читаем из файла пол буфера
 						}else{
-							fres=f_read(&fil,wbuf,grab,&len);				//sps:	Читаем из файла целый буфер
+							fres=f_read(&fil,wbuf,grab,&len);					//sps:	Читаем из файла целый буфер
 						}
-						sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
+						sprintf(wbuf,"%s\0",wbuf);								//sps:	Затыкаем строку в буфере
 					}
 
-						f_close(&fil);										//sps:	Закрываем файл
+						f_close(&fil);											//sps:	Закрываем файл
 			}
 //================================================================================================
-//================================================================================================
+//================================================================================================ SPS :: Функция замены символов для Hex-редактора
 			void ChangeCHAR(char* msg, int mcx, int mcy, int scx, int scy, char key)
 			{
-				char* testhex=UNS_MALLOC(2+1);
-				int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
+				char* hidhex=UNS_MALLOC(2+1);
+			//	int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
 				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-				icursor = point+mcy*hstrsz+mcx/2;							//sps: Вычесляем позицию урсора в буфере для замены симола
-				hcursor = (mcy*hstrsz*2+mcx)-1;								//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
+			//	icursor = point+mcy*hstrsz+mcx/2;								//sps: Вычесляем позицию урсора в буфере для замены симола
+				hcursor = LCD_CLIENT_WIDTH*mcy+mcx-1;
 
-				msg[hcursor+1]=key;											//sps: Заменяем символ
-				sprintf(testhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);		//sps: Забираем хекс-представление символа
-				msg[scx] = strtol(testhex, NULL, 16);						//sps: Получаем его CHAR-представление
+				msg[hcursor+1]=key;												//sps: Заменяем символ
 
-				UNS_FREE(testhex);
+				if(((mcy*hstrsz*2+mcx)-1)&1){													//sps: Определяем на какой части хекс-представления символа находится курсор
+					sprintf(hidhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);		//sps: Забираем два нужных символа при нечетином курсоре
+				}else{
+					sprintf(hidhex,"%c%c",msg[hcursor],msg[hcursor+1]);			//sps: Забираем два нужных символа при четином курсоре
+				}
 
-				cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
+				msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
+
+				UNS_FREE(hidhex);
+
+			//	cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
 			}
 //================================================================================================
-//================================================================================================ SPS :: HexViewer
+//================================================================================================ SPS :: Hex-просмотрщик
 			eKey HexView(sLCDUI_Window* window) {
 
 				sScreen* screen = &window->screen;
@@ -498,7 +504,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						{
 							if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 							{
-								if(point<hstrsz){								//sps: Выравниваем начало файла
+								if(point<hstrsz){											//sps: Выравниваем начало файла
 									point=hstrsz;
 								}else{
 									point-=hstrsz;
@@ -524,7 +530,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									ReGrab();
 								};
 							}
-							else if (key == KEY_RSOFT)
+							else if (key == KEY_RSOFT)										//sps: Уходим отсюда
+
 							{
 								UNS_FREE(twohex);
 								UNS_FREE(hexstr);
@@ -741,8 +748,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 //-----------------------------------------------------------------------------------------------
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  [►☻◄ ЗОНА ЭКСПЕРЕМЕНТА ►☻◄]
-
-
 
 					//		DBGF("MSGHEX => %c%c", msg[hcursor+1],msg[hcursor+2]);
 					//		char* testhex=UNS_MALLOC(2+1);
