@@ -390,11 +390,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			void ChangeCHAR(char* msg, int mcx, int mcy, int scx, int scy, char key)
 			{
 				char* hidhex=UNS_MALLOC(2+1);
-			//	int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
+				int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
 				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-			//	icursor = point+mcy*hstrsz+mcx/2;								//sps: Вычесляем позицию урсора в буфере для замены симола
-				hcursor = LCD_CLIENT_WIDTH*mcy+mcx-1;
+				icursor = (point+mcy*hstrsz+mcx/2)-1;								//sps: Вычесляем позицию урсора в буфере для замены симола
+				hcursor = (LCD_CLIENT_WIDTH*mcy+mcx)-1;
 
 				msg[hcursor+1]=key;												//sps: Заменяем символ
 
@@ -405,6 +405,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				}
 
 				msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
+				wbuf[icursor] = strtol(hidhex, NULL, 16);
 
 				UNS_FREE(hidhex);
 
@@ -675,7 +676,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================ SPS :: HexViewer
 			eKey HexEdit(sLCDUI_Window* window) {
 
-				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
+				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
+				bool 	need_reconstruct=true;									//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
 				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
 				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
 				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
@@ -707,8 +709,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				//sps: Проверяем что все создалось правильно
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
 
-
-
+				for (;;)
+				{
+					if(need_reconstruct)															//sps: если что-то поменялось - перерисовываем окно
+					{
 						memset(offset,0,tstrsz+1);								//sps: Чистим фсе
 						memset(hexstr,0,tstrsz+1);
 						memset(msg,0,scrsize+20);
@@ -746,6 +750,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
+
+						need_reconstruct=false;												//sps: Заткнем этот блок
+					}
 //-----------------------------------------------------------------------------------------------
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  [►☻◄ ЗОНА ЭКСПЕРЕМЕНТА ►☻◄]
 
@@ -760,8 +767,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					//		DBGF("HIDDEN COORDINATEs => char-%d hex-%d", icursor, hcursor)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-				for (;;)
-				{
+
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
 						//	ReDrawHEX(window, msg, offset);
@@ -807,6 +813,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								{
 									mcy++;													//sps: Возвращаем курсор на первую строку
 
+									need_reconstruct=true;									//sps: Обновляем данные в окне
+
 									if (point > 0)											//sps: Контроллируем верхний край файла
 									{
 										if(point<hstrsz){									//sps: Выравниваем начало файла
@@ -833,6 +841,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								if(mcy>(LCD_CLIENT_HEIGHT-2))					//sps: Если дошли до края экрана
 								{
 									mcy--;										//sps: Возвращаем курсор на последнюю строку
+
+									need_reconstruct=true;						//sps: Обновляем данные в окне
 
 									point+=hstrsz;								//sps: Двигаем экран
 									DBGF("point = %d %d",point,offs+point);
