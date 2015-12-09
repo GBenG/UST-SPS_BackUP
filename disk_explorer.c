@@ -354,13 +354,33 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		unsigned int offs=0;					//sps:	Смещение буфера по файлу
 		unsigned int grab;						//sps:	Кол-во загружаеммых в буфер байт
 
+		bool		 chestat=false;				//sps: Статус редактирования
 
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
-			void ReGrab(void)
+		void ReWrite(void)
+		{
+			FIL 	fil;
+
+			FRESULT fres=f_open(&fil,full_path, FA_WRITE);						//sps:	Открываем файл на запись
+
+			if(fres==FR_OK)
+			{
+				f_write(&fil, wbuf, grab, &len);								//sps:	Пишем все что изменили
+				chestat=false;													//sps:  Изменения в буфере сохранены
+			}
+
+			f_close(&fil);														//sps:	Закрываем файл
+		}
+//================================================================================================
+//================================================================================================
+			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер
 			{
 					FIL 	fil;
-					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл
+
+					if(rewrite==1) ReWrite();
+
+					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
 
 					if(fres==FR_OK)
 					{
@@ -406,6 +426,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
 				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: ЗАписываем новый символ в буфер
+
+				chestat=true;													//sps: Буфер редактировался
 
 				UNS_FREE(hidhex);
 			}
@@ -513,7 +535,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								{
 									point=hsize+hstrsz;
 									offs-=hsize;
-									ReGrab();
+									ReGrab(false);
 								};
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
@@ -526,7 +548,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								{
 									point=hsize-hscrsze;
 									offs+=hsize;
-									ReGrab();
+									ReGrab(false);
 								};
 							}
 							else if (key == KEY_RSOFT)										//sps: Уходим отсюда
@@ -630,7 +652,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											{
 												point+=hsize;
 												offs-=hsize;
-												ReGrab();
+												ReGrab(false);
 											}
 										}
 										else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
@@ -642,7 +664,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											{
 												point-=hsize;
 												offs+=hsize;
-												ReGrab();
+												ReGrab(false);
 											}
 										}
 										else if (key == KEY_RSOFT)
@@ -815,7 +837,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										{
 											point=hsize+hstrsz;
 											offs-=hsize;
-											ReGrab();
+											if(chestat){									//sps: Если были изменения в буфере, предложим сохранить
+												eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+												if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(true);}
+											}
 										}
 									}
 								}
@@ -837,7 +862,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									{
 										point=hsize-hscrsze;
 										offs+=hsize;
-										ReGrab();
+										if(chestat){									//sps: Если были изменения в буфере, предложим сохранить
+											eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+											if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(true);}
+										}
 									};
 								}
 							}
@@ -859,6 +887,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(asblok);
 								UNS_FREE(space1);
 								UNS_FREE(space2);
+								if(chestat){						//sps: Если были изменения в буфере, предложим сохранить
+									eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+									if(res==KEY_RSOFT){ReWrite();}
+								}
 								return key;
 								break;
 							}
@@ -871,6 +903,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(asblok);
 								UNS_FREE(space1);
 								UNS_FREE(space2);
+								if(chestat){						//sps: Если были изменения в буфере, предложим сохранить
+									eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+									if(res==KEY_RSOFT){ReWrite();}
+								}
 								return key;
 								break;
 							}
@@ -984,7 +1020,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											{
 												point+=hsize;
 												offs-=hsize;
-												ReGrab();
+												ReGrab(false);
 											};
 										}
 										}
@@ -1004,7 +1040,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 												{
 												point-=hsize;
 													offs+=hsize;
-													ReGrab();
+													ReGrab(false);
 												}
 											}
 										}
@@ -1047,7 +1083,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 			sLCDUI_Window* window = LCDUI_Supervisor_GetMyWindow();
 
-			ReGrab();	//sps: Захватываем первую часть файла в скользящий буфер
+			ReGrab(false);	//sps: Захватываем первую часть файла в скользящий буфер
 
 			for(;;)
 			{
