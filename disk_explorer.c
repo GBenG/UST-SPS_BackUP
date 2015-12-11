@@ -734,6 +734,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				int		mcx=spcount1+1, mcy=0;									//sps: Координаты основного указателя
 				int		scx=0, scy=0;											//sps: Координаты вторичного указателя
 
+				bool 	chractive=true;
+				UINT	timerch;
+
 //-----------------------------------------------------------------------------------------------
 				//sps: Проверяем что все создалось правильно
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
@@ -937,7 +940,33 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							} else if (key == KEY_7) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'7');
 							} else if (key == KEY_8) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'8');
 							} else if (key == KEY_9) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'9');
-							} else if (key == KEY_00){	ChangeCHAR(msg,mcx,mcy,scx,scy,'A'); //sps: TODO эту функцию заменить на функцию ввода 'ABCDEF'
+							} else if (key == KEY_00){										//sps: TODO эту функцию заменить на функцию ввода 'ABCDEF'
+
+								/*
+								sLCDUI_Window* window = LCDUI_Supervisor_GetMyWindow();
+								sScreen* screen = &window->screen;
+								Screen_DrawFrame(screen, 3, 2, 5, 9);
+								sleep(500);
+								*/
+
+								char hexchar[6] = {'A','B','C','D','E','F'};
+								int indexch = 0;
+
+
+								if (chractive) {
+									timerch = systemGetTimer();  //засекаем
+									chractive=false;
+								}
+
+
+								if (systemGetTimer()>timerch+1000)
+								{
+									ChangeCHAR(msg,mcx,mcy,scx,scy,hexchar[indexch]);
+									chractive=true;
+								}else{
+									indexch++;
+								}
+
 							} else {
 								beepError();
 							}
