@@ -734,8 +734,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				int		mcx=spcount1+1, mcy=0;									//sps: Координаты основного указателя
 				int		scx=0, scy=0;											//sps: Координаты вторичного указателя
 
-				bool 	chractive=true;
-				UINT	timerch;
+//-----------------------------------------------------------------------------------------------
+
+				bool 	chractive=true;											//sps: Активность ввода буквенных символов в HEX
+				char 	hexchar[6] = {'A','B','C','D','E','F'};					//sps: Набор символов для воода в HEX
+				int 	indexch;												//sps: Индекс символа в массиве
+				UINT	timerch;												//sps: Буфер для засакаемого времени
+				#define CHAREDIT_TIME 4000 										//sps: время задержки последнего нажатия
 
 //-----------------------------------------------------------------------------------------------
 				//sps: Проверяем что все создалось правильно
@@ -818,6 +823,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 							need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
+					}
+
+//-----------------------------------------------------------------------------------------------
+
+					if (!chractive) {														//sps: Если символ редактируется, засечем время последнего нажатия
+						if (systemGetTimer()>timerch+CHAREDIT_TIME)
+						{
+							indexch = 0;
+							chractive=true;
+						}
 					}
 
 //-----------------------------------------------------------------------------------------------
@@ -922,7 +937,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								return key;
 								break;
 							}
-							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄]
+							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄] TODO выпилить
 							{
 								msg[0]='\n';
 								msg[15]='\n';
@@ -940,32 +955,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							} else if (key == KEY_7) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'7');
 							} else if (key == KEY_8) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'8');
 							} else if (key == KEY_9) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'9');
-							} else if (key == KEY_00){										//sps: TODO эту функцию заменить на функцию ввода 'ABCDEF'
+							} else if (key == KEY_00){
 
-								/*
-								sLCDUI_Window* window = LCDUI_Supervisor_GetMyWindow();
-								sScreen* screen = &window->screen;
-								Screen_DrawFrame(screen, 3, 2, 5, 9);
-								sleep(500);
-								*/
-
-								char hexchar[6] = {'A','B','C','D','E','F'};
-								int indexch = 0;
-
-
-								if (chractive) {
-									timerch = systemGetTimer();  //засекаем
-									chractive=false;
-								}
-
-
-								if (systemGetTimer()>timerch+1000)
-								{
-									ChangeCHAR(msg,mcx,mcy,scx,scy,hexchar[indexch]);
-									chractive=true;
+								if (chractive) {											//sps: Если символ только начали набирать
+									indexch = 0;											//sps: Сбросим индекс буквы на первый элемент массива
+									chractive=false;										//sps: Установим статус "символ вводится"
 								}else{
-									indexch++;
+									if(indexch<5){indexch++;}else{indexch = 0;}				//sps: Зацикливаем перебор символов
 								}
+								ChangeCHAR(msg,mcx,mcy,scx,scy,hexchar[indexch]);			//sps: Выводим текущий выбранный символ
+								timerch = systemGetTimer(); 								//sps: засекаем
 
 							} else {
 								beepError();
