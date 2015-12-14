@@ -905,13 +905,21 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									};
 								}
 							}
-							else if ((key == KEY_LEFT) && mcx>spcount1+1)
+							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
 							{
-								mcx--;
+								if(mcx == spcount1+1 && mcy > 0){
+									mcx = spcount1+hstrsz*2;
+									mcy--;
+								}else{if(mcx !=spcount1+1 && mcy !=0)mcx--;}
+								DBGF("mcx=%d mcy=%d",mcx,mcy);
 							}
-							else if ((key == KEY_RIGHT) && mcx<spcount1+hstrsz*2)
+							else if ((key == KEY_RIGHT) && mcx<=spcount1+hstrsz*2)
 							{
-								mcx++;
+								if(mcx == spcount1+hstrsz*2){
+									mcx = spcount1+1;
+									mcy++;
+								}else{mcx++;}
+								DBGF("mcx=%d mcy=%d",mcx,mcy);
 							}
 							else if (key == KEY_RSOFT)
 							{
