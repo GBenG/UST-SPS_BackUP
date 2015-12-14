@@ -355,6 +355,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		unsigned int grab;						//sps:	Кол-во загружаеммых в буфер байт
 
 		bool		 chestat=false;				//sps: Статус редактирования
+		bool 		 need_reconstruct;			//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
 
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
@@ -434,8 +435,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				}
 
 				msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
-				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: ЗАписываем новый символ в буфер
 
+				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: Записываем новый символ в буфер
+
+				need_reconstruct=true;											//sps: Перестраеваем окно
 				chestat=true;													//sps: Буфер редактировался
 
 				UNS_FREE(hidhex);
@@ -685,6 +688,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										else if (key == KEY_LSOFT)
 										{
 											UNS_FREE(msg);
+
+											if(chestat){	 //sps: Если были изменения в буфере, предложим сохранить
+												eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+												if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
+											}
+
 											return key;
 											break;
 										}
@@ -706,7 +715,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			eKey HexEdit(sLCDUI_Window* window) {
 
 				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
-				bool 	need_reconstruct=true;									//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
+						need_reconstruct=true;									//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
 				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
 				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
 				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
@@ -914,10 +923,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(asblok);
 								UNS_FREE(space1);
 								UNS_FREE(space2);
-								if(chestat){						//sps: Если были изменения в буфере, предложим сохранить
+								/*if(chestat){						//sps: Если были изменения в буфере, предложим сохранить
 									eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 									if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
-								}
+								}*/
 								return key;
 								break;
 							}
