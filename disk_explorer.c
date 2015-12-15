@@ -430,6 +430,40 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				UNS_FREE(hidhex);
 			}
 //================================================================================================
+//================================================================================================
+			int HexScreenUp(int mcy)
+			{
+				mcy--;
+
+				if(mcy<0)													//sps: Если дошли до края экрана
+				{
+					mcy++;													//sps: Возвращаем курсор на первую строку
+
+					need_reconstruct=true;									//sps: Обновляем данные в окне
+
+					if (point > 0)											//sps: Контроллируем верхний край файла
+					{
+						if(point<hstrsz){									//sps: Выравниваем начало файла
+							point=hstrsz;
+						}else{
+							point-=hstrsz;
+						}
+
+						DBGF("point = %d %d",point,offs+point);
+
+						if (offs+point<=offs && offs!=0)					//sps: Буфер закончился, двигаем его вверх, если есть куда
+						{
+							point=hsize+hstrsz;
+							offs-=hsize;
+							if(chestat){									//sps: Если были изменения в буфере, предложим сохранить
+								eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+								if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
+							}
+						}
+					}
+				}
+				return mcy;
+			}
 //================================================================================================ SPS :: Hex-просмотрщик
 			eKey HexView(sLCDUI_Window* window) {
 
@@ -837,35 +871,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						{
 							if (key == KEY_UP || key==KEY_PGUP)
 							{
-								mcy--;
-
-								if(mcy<0)													//sps: Если дошли до края экрана
-								{
-									mcy++;													//sps: Возвращаем курсор на первую строку
-
-									need_reconstruct=true;									//sps: Обновляем данные в окне
-
-									if (point > 0)											//sps: Контроллируем верхний край файла
-									{
-										if(point<hstrsz){									//sps: Выравниваем начало файла
-											point=hstrsz;
-										}else{
-											point-=hstrsz;
-										}
-
-										DBGF("point = %d %d",point,offs+point);
-
-										if (offs+point<=offs && offs!=0)					//sps: Буфер закончился, двигаем его вверх, если есть куда
-										{
-											point=hsize+hstrsz;
-											offs-=hsize;
-											if(chestat){									//sps: Если были изменения в буфере, предложим сохранить
-												eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
-												if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
-											}
-										}
-									}
-								}
+								mcy=HexScreenUp(mcy);
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 							{
@@ -888,7 +894,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 											if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 										}
-									};
+									}
 								}
 							}
 							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
