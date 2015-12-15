@@ -35,6 +35,8 @@
 #include "localization/messages.h"
 #include "localization/menu.h"
 #include "printer.h"
+//#include "dex_read_file.h"		//sps
+
 
 #include "arraylist.h"
 #ifdef FUNCTION_SOUND_BLASTER
@@ -358,22 +360,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		bool 		 need_reconstruct;			//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
 
 //-----------------------------------------------------------------------------------------------
-//================================================================================================
-/*		void ReWrite(void)
-		{
-			FIL 	fil;
-
-			FRESULT fres=f_open(&fil,full_path, FA_WRITE);						//sps:	Открываем файл на запись
-
-			if(fres==FR_OK)
-			{
-				f_write(&fil, wbuf, grab, &len);								//sps:	Пишем все что изменили
-				chestat=false;													//sps:  Изменения в буфере сохранены
-			}
-
-			f_close(&fil);														//sps:	Закрываем файл
-		}*/
-//================================================================================================
 //================================================================================================
 			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер
 			{
@@ -849,7 +835,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
-							if ((key == KEY_UP || key==KEY_PGUP) /*&& point >= 0*/)
+							if (key == KEY_UP || key==KEY_PGUP)
 							{
 								mcy--;
 
@@ -898,7 +884,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									{
 										point=hsize-hscrsze;
 										offs+=hsize;
-										if(chestat){									//sps: Если были изменения в буфере, предложим сохранить
+										if(chestat){							//sps: Если были изменения в буфере, предложим сохранить
 											eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 											if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 										}
@@ -907,19 +893,22 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
 							{
-								if(mcx == spcount1+1 && mcy > 0){
+								if(mcx == spcount1+1){										//sps: Уперлись в начало строки? Перескочим на предидущуюю
 									mcx = spcount1+hstrsz*2;
 									mcy--;
-								}else{if(mcx !=spcount1+1 && mcy !=0)mcx--;}
-								DBGF("mcx=%d mcy=%d",mcx,mcy);
+								}else{
+									if(!(mcx==spcount1+1 && point+offs+mcy==0)) mcx--; 		//sps: Листаем как обычно если не уперись в начало файла
+
+								}
+								DBGF("mcx=%d mcy=%d point=%d offs=%d",mcx,mcy,point,offs);
 							}
 							else if ((key == KEY_RIGHT) && mcx<=spcount1+hstrsz*2)
 							{
-								if(mcx == spcount1+hstrsz*2){
+								if(mcx == spcount1+hstrsz*2){								//sps: Уперлись в конец строки? Перескочим на следующую
 									mcx = spcount1+1;
 									mcy++;
 								}else{mcx++;}
-								DBGF("mcx=%d mcy=%d",mcx,mcy);
+								DBGF("mcx=%d mcy=%d point=%d offs=%d",mcx,mcy,point,offs);
 							}
 							else if (key == KEY_RSOFT)
 							{
