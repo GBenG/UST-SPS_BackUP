@@ -464,6 +464,35 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				}
 				return mcy;
 			}
+//================================================================================================
+//================================================================================================
+			int HexScreenDown(int mcy)
+			{
+				mcy++;											//sps: Двигаем курсор вниз
+
+				if(mcy>(LCD_CLIENT_HEIGHT-2))					//sps: Если дошли до края экрана
+				{
+					mcy--;										//sps: Возвращаем курсор на последнюю строку
+
+					need_reconstruct=true;						//sps: Обновляем данные в окне
+
+					point+=hstrsz;								//sps: Двигаем экран
+
+					DBGF("point = %d %d",point,offs+point);
+
+					if (offs+point+hscrsze>=offs+wsize)			//sps: Если кончился буфер, загружаем новый кусок
+					{
+						point=hsize-hscrsze;
+						offs+=hsize;
+						if(chestat){							//sps: Если были изменения в буфере, предложим сохранить
+							eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+							if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
+						}
+					}
+				}
+				return mcy;
+			}
+//================================================================================================
 //================================================================================================ SPS :: Hex-просмотрщик
 			eKey HexView(sLCDUI_Window* window) {
 
@@ -875,46 +904,39 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 							{
-								mcy++;											//sps: Двигаем курсор вниз
-
-								if(mcy>(LCD_CLIENT_HEIGHT-2))					//sps: Если дошли до края экрана
-								{
-									mcy--;										//sps: Возвращаем курсор на последнюю строку
-
-									need_reconstruct=true;						//sps: Обновляем данные в окне
-
-									point+=hstrsz;								//sps: Двигаем экран
-									DBGF("point = %d %d",point,offs+point);
-
-									if (offs+point+hscrsze>=offs+wsize)			//sps: Если кончился буфер, загружаем новый кусок
-									{
-										point=hsize-hscrsze;
-										offs+=hsize;
-										if(chestat){							//sps: Если были изменения в буфере, предложим сохранить
-											eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
-											if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
-										}
-									}
-								}
+								mcy=HexScreenDown(mcy);
 							}
 							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
 							{
-								if(mcx == spcount1+1){										//sps: Уперлись в начало строки? Перескочим на предидущуюю
-									mcx = spcount1+hstrsz*2;
-									mcy--;
+								if(mcx == spcount1+1){
+									if(mcy==0) {
+										if (!(point+offs+mcy==0)) mcx = spcount1+hstrsz*2;	//sps: Уперлись в начало файла? Никуда не перескакиваем
+										mcy=HexScreenUp(mcy);
+									}else{
+										mcx = spcount1+hstrsz*2;							//sps: Уперлись в начало строки? Перескочим на предидущуюю
+										mcy--;
+									}
 								}else{
-									if(!(mcx==spcount1+1 && point+offs+mcy==0)) mcx--; 		//sps: Листаем как обычно если не уперись в начало файла
-
-								}
-								DBGF("mcx=%d mcy=%d point=%d offs=%d",mcx,mcy,point,offs);
+									if(!(mcx==spcount1+1 && point+offs+mcy==0)) mcx--; 		//sps: Листаем как обычно если мы не в начале файла
+							}
+						//		DBGF("mcx=%d mcy=%d point=%d offs=%d",mcx,mcy,point,offs);
 							}
 							else if ((key == KEY_RIGHT) && mcx<=spcount1+hstrsz*2)
 							{
 								if(mcx == spcount1+hstrsz*2){								//sps: Уперлись в конец строки? Перескочим на следующую
-									mcx = spcount1+1;
-									mcy++;
-								}else{mcx++;}
-								DBGF("mcx=%d mcy=%d point=%d offs=%d",mcx,mcy,point,offs);
+									if(mcy==4) {
+										mcx = spcount1+1;
+										mcy=HexScreenDown(mcy);
+									}else{
+										mcx = spcount1+1;
+										mcy++;
+									}
+								}else{
+									mcx++;
+
+									DBGF("mcx=%d mcy=%d point=%d offs=%d fsize=%d slcurs=%d",mcx,mcy,point,offs,fno->fsize,slcurs);
+								}
+
 							}
 							else if (key == KEY_RSOFT)
 							{
