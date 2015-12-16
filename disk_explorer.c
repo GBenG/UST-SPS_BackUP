@@ -791,6 +791,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				int		mcx=spcount1+1, mcy=0;									//sps: Координаты основного указателя
 				int		scx=0, scy=0;											//sps: Координаты вторичного указателя
+				UINT	fpoint;													//sps: Положение HEX-курсора в файле
 
 //-----------------------------------------------------------------------------------------------
 
@@ -849,12 +850,22 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						need_reconstruct=false;												//sps: Заткнем этот блок
 					}
 //-----------------------------------------------------------------------------------------------
+
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
-						scy=mcy;														//sps: Вычесляем позицию вторичного курсора по координатам
+						scy=mcy;
 						scx=spcount1+hstrsz*2+spcount2+mcx/2;
-						slcurs=LCD_CLIENT_WIDTH*scy+scx;
+						slcurs=LCD_CLIENT_WIDTH*scy+scx;								//sps: Вычесляем позицию вторичного курсора по координатам
+
+						fpoint=offs+point+(scy*4)+(scx-(spcount1)-1-(hstrsz*2));		//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						if(fpoint==(fno->fsize)+1)										//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
+							{
+								mcx--;
+								cursor=LCD_CLIENT_WIDTH*mcy+mcx;
+								scx=spcount1+hstrsz*2+spcount2+mcx/2;
+								slcurs=LCD_CLIENT_WIDTH*scy+scx;
+							}
 
 //-----------------------------------------------------------------------------------------------
 
@@ -908,6 +919,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
 							{
+								//--------------------------------------
 								if(mcx == spcount1+1){
 									if(mcy==0) {
 										if (!(point+offs+mcy==0)) mcx = spcount1+hstrsz*2;	//sps: Уперлись в начало файла? Никуда не перескакиваем
@@ -918,25 +930,24 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 									}
 								}else{
 									if(!(mcx==spcount1+1 && point+offs+mcy==0)) mcx--; 		//sps: Листаем как обычно если мы не в начале файла
-							}
-						//		DBGF("mcx=%d mcy=%d point=%d offs=%d",mcx,mcy,point,offs);
+								}
+								//--------------------------------------
 							}
 							else if ((key == KEY_RIGHT) && mcx<=spcount1+hstrsz*2)
 							{
-								if(mcx == spcount1+hstrsz*2){								//sps: Уперлись в конец строки? Перескочим на следующую
-									if(mcy==4) {
-										mcx = spcount1+1;
+								//--------------------------------------
+								if(mcx == spcount1+hstrsz*2){
+									if(mcy==LCD_CLIENT_HEIGHT-2) {
+										if(fpoint<fno->fsize) mcx = spcount1+1;				//sps: Уперлись в конец файла? Никуда не перескакиваем
 										mcy=HexScreenDown(mcy);
 									}else{
-										mcx = spcount1+1;
+										mcx = spcount1+1;									//sps: Уперлись в  конец строки? Перескочим на предидущуюю
 										mcy++;
 									}
 								}else{
-									mcx++;
-
-									DBGF("mcx=%d mcy=%d point=%d offs=%d fsize=%d slcurs=%d",mcx,mcy,point,offs,fno->fsize,slcurs);
+									if(fpoint<=fno->fsize)mcx++; 							//sps: Листаем как обычно если мы не в конце файла
 								}
-
+								//--------------------------------------
 							}
 							else if (key == KEY_RSOFT)
 							{
@@ -948,10 +959,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(asblok);
 								UNS_FREE(space1);
 								UNS_FREE(space2);
-								/*if(chestat){						//sps: Если были изменения в буфере, предложим сохранить
-									eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
-									if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
-								}*/
 								return key;
 								break;
 							}
@@ -971,7 +978,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								return key;
 								break;
 							}
-							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄] TODO выпилить
+							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄] TODO Костыль для ровной печати НЕХ-окон, выпилить!
 							{
 								msg[0]='\n';
 								msg[15]='\n';
