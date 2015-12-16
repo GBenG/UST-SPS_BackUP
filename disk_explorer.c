@@ -860,12 +860,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						fpoint=offs+point+(scy*4)+(scx-(spcount1)-1-(hstrsz*2));		//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
 						if(fpoint==(fno->fsize)+1)										//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
-							{
-								mcx--;
-								cursor=LCD_CLIENT_WIDTH*mcy+mcx;
-								scx=spcount1+hstrsz*2+spcount2+mcx/2;
-								slcurs=LCD_CLIENT_WIDTH*scy+scx;
-							}
+						{
+							mcx--;
+							cursor=LCD_CLIENT_WIDTH*mcy+mcx;
+							scx=spcount1+hstrsz*2+spcount2+mcx/2;
+							slcurs=LCD_CLIENT_WIDTH*scy+scx;
+						}
 
 //-----------------------------------------------------------------------------------------------
 
@@ -913,7 +913,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								mcy=HexScreenUp(mcy);
 							}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && /*offs+point+hscrsze*/fpoint <= size)
 							{
 								mcy=HexScreenDown(mcy);
 							}
@@ -938,14 +938,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								//--------------------------------------
 								if(mcx == spcount1+hstrsz*2){
 									if(mcy==LCD_CLIENT_HEIGHT-2) {
-										if(fpoint<fno->fsize) mcx = spcount1+1;				//sps: Уперлись в конец файла? Никуда не перескакиваем
+										if(fpoint<size) mcx = spcount1+1;					//sps: Уперлись в конец файла? Никуда не перескакиваем
 										mcy=HexScreenDown(mcy);
 									}else{
 										mcx = spcount1+1;									//sps: Уперлись в  конец строки? Перескочим на предидущуюю
 										mcy++;
 									}
 								}else{
-									if(fpoint<=fno->fsize)mcx++; 							//sps: Листаем как обычно если мы не в конце файла
+									if(fpoint<=size)mcx++; 									//sps: Листаем как обычно если мы не в конце файла
 								}
 								//--------------------------------------
 							}
