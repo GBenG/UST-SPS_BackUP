@@ -913,7 +913,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								mcy=HexScreenUp(mcy);
 							}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && /*offs+point+hscrsze*/fpoint <= size)
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && (offs+point+((mcy+1)*hstrsz))<size)
 							{
 								mcy=HexScreenDown(mcy);
 							}
