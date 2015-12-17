@@ -350,6 +350,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		#define hstrsz 	4													//sps:	Кол-во обрабатываемых символов в строке HEX
 
 //-----------------------------------------------------------------------------------------------
+
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
 
 		unsigned int len;						//sps:	Возврат прочитанных байт
@@ -367,13 +368,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					if(rewrite==1) {
 
-						FRESULT fres=f_open(&fil,full_path, FA_WRITE);						//sps:	Открываем файл на запись
+						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
 						if(fres==FR_OK)
 						{
-							f_write(&fil, wbuf, grab, &len);								//sps:	Пишем все что изменили
-							chestat=false;													//sps:  Изменения в буфере сохранены
+							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
+							chestat=false;										//sps:  Изменения в буфере сохранены
 						}
-						f_close(&fil);														//sps:	Закрываем файл
+						f_close(&fil);											//sps:	Закрываем файл
 					}
 
 					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
@@ -435,15 +436,15 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			{
 				mcy--;
 
-				if(mcy<0)													//sps: Если дошли до края экрана
+				if(mcy<0)														//sps: Если дошли до края экрана
 				{
-					mcy++;													//sps: Возвращаем курсор на первую строку
+					mcy++;														//sps: Возвращаем курсор на первую строку
 
-					need_reconstruct=true;									//sps: Обновляем данные в окне
+					need_reconstruct=true;										//sps: Обновляем данные в окне
 
-					if (point > 0)											//sps: Контроллируем верхний край файла
+					if (point > 0)												//sps: Контроллируем верхний край файла
 					{
-						if(point<hstrsz){									//sps: Выравниваем начало файла
+						if(point<hstrsz){										//sps: Выравниваем начало файла
 							point=hstrsz;
 						}else{
 							point-=hstrsz;
@@ -451,11 +452,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						DBGF("point = %d %d",point,offs+point);
 
-						if (offs+point<=offs && offs!=0)					//sps: Буфер закончился, двигаем его вверх, если есть куда
+						if (offs+point<=offs && offs!=0)						//sps: Буфер закончился, двигаем его вверх, если есть куда
 						{
 							point=hsize+hstrsz;
 							offs-=hsize;
-							if(chestat){									//sps: Если были изменения в буфере, предложим сохранить
+							if(chestat){										//sps: Если были изменения в буфере, предложим сохранить
 								eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 								if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 							}
@@ -468,23 +469,23 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			int HexScreenDown(int mcy)
 			{
-				mcy++;											//sps: Двигаем курсор вниз
+				mcy++;															//sps: Двигаем курсор вниз
 
-				if(mcy>(LCD_CLIENT_HEIGHT-2))					//sps: Если дошли до края экрана
+				if(mcy>(LCD_CLIENT_HEIGHT-2))									//sps: Если дошли до края экрана
 				{
-					mcy--;										//sps: Возвращаем курсор на последнюю строку
+					mcy--;														//sps: Возвращаем курсор на последнюю строку
 
-					need_reconstruct=true;						//sps: Обновляем данные в окне
+					need_reconstruct=true;										//sps: Обновляем данные в окне
 
-					point+=hstrsz;								//sps: Двигаем экран
+					point+=hstrsz;												//sps: Двигаем экран
 
 					DBGF("point = %d %d",point,offs+point);
 
-					if (offs+point+hscrsze>=offs+wsize)			//sps: Если кончился буфер, загружаем новый кусок
+					if (offs+point+hscrsze>=offs+wsize)							//sps: Если кончился буфер, загружаем новый кусок
 					{
 						point=hsize-hscrsze;
 						offs+=hsize;
-						if(chestat){							//sps: Если были изменения в буфере, предложим сохранить
+						if(chestat){											//sps: Если были изменения в буфере, предложим сохранить
 							eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 							if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 						}
@@ -498,27 +499,27 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				sScreen* screen = &window->screen;
 
-				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
-				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
-				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
-				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+				bool 	need_redraw=true;													//sps: Пнуть в ТРУ если нужно перисовать окошко
+				char*  	offset=UNS_MALLOC(tstrsz+1);										//sps: Смещение номера считанного байта файла в НЕХ
+				char*  	hexstr=UNS_MALLOC(tstrsz+1);										//sps: Сформированная строка на вывод в окно
+				char*  	msg=UNS_MALLOC(scrsize+20);											//sps: Сформированное сообщение для вывода на экран
 
-				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
-				char*  	asblok=UNS_MALLOC(hstrsz+1);							//sps: Блок ASCII значений считанных байт
-				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
+				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);										//sps: Блок шестнадцтеричных значений считанных байт
+				char*  	asblok=UNS_MALLOC(hstrsz+1);										//sps: Блок ASCII значений считанных байт
+				char*  	twohex=UNS_MALLOC(2);												//sps: Блок ASCII значений считанных байт
 
 //-----------------------------------------------------------------------------------------------
-				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2					//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2								//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
 				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
-				char*  		space1=UNS_MALLOC(spcount1+1);						//sps:	Выделяем место под пробелы первого столбца
-				char*  		space2=UNS_MALLOC(spcount2+1);						//sps:	Выделяем место под пробелы второго столбца
+				char*  		space1=UNS_MALLOC(spcount1+1);									//sps:	Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(spcount2+1);									//sps:	Выделяем место под пробелы второго столбца
 
-				memset(space1,0,spcount1+1);									//sps: Чистим фсе
+				memset(space1,0,spcount1+1);												//sps: Чистим фсе
 				memset(space2,0,spcount2+1);
 
 				for(int i=0;i<spcount1;i++)
 				{
-					if(spcount1-i > 0)space1[i] = ' ';							//sps: Набиваем пробелы для первого и второго столбца
+					if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
 					if(spcount2-i > 0)space2[i] = ' ';
 				}
 //-----------------------------------------------------------------------------------------------
@@ -528,29 +529,29 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				for (;;) {
 
-					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
+					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
 
-						memset(offset,0,tstrsz+1);								//sps: Чистим фсе
+						memset(offset,0,tstrsz+1);											//sps: Чистим фсе
 						memset(hexstr,0,tstrsz+1);
 						memset(msg,0,scrsize+20);
 
-						char*	pmsg=msg;										//sps: Создаем указатель для склеивания всех блоков в страницу
+						char*	pmsg=msg;													//sps: Создаем указатель для склеивания всех блоков в страницу
 
 //-----------------------------------------------------------------------------------------------
-						for(int j=point;j<point+hscrsze;j+=hstrsz)				//sps: формируем пять строк
+						for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
 						{
 
-							memset(hxblok,0,hstrsz*2+1);						//sps: Чистим фсе
+							memset(hxblok,0,hstrsz*2+1);									//sps: Чистим фсе
 							memset(asblok,0,hstrsz+1);
 
-							for(int i=j;i<j+hstrsz;i++)							//sps: формируем hxblok и asblok
+							for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
 							{
-								sprintf(twohex,"%02X",wbuf[i]);					//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
 								hxblok[(i-j)*2]=twohex[0];
 								hxblok[(i-j)*2+1]=twohex[1];
 
-								if(wbuf[i]<' ')									//sps: asblok - ASCII имволы байт, с заменой спецсимволов
+								if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
 								{
 									asblok[i-j]=' ';
 								}else{
@@ -763,43 +764,43 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================ SPS :: HexViewer
 			eKey HexEdit(sLCDUI_Window* window) {
 
-				bool 	need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
-						need_reconstruct=true;									//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
-				char*  	offset=UNS_MALLOC(tstrsz+1);							//sps: Смещение номера считанного байта файла в НЕХ
-				char*  	hexstr=UNS_MALLOC(tstrsz+1);							//sps: Сформированная строка на вывод в окно
-				char*  	msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+				bool 	need_redraw=true;													//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
+						need_reconstruct=true;												//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
+				char*  	offset=UNS_MALLOC(tstrsz+1);										//sps: Смещение номера считанного байта файла в НЕХ
+				char*  	hexstr=UNS_MALLOC(tstrsz+1);										//sps: Сформированная строка на вывод в окно
+				char*  	msg=UNS_MALLOC(scrsize+20);											//sps: Сформированное сообщение для вывода на экран
 
-				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);							//sps: Блок шестнадцтеричных значений считанных байт
-				char*  	asblok=UNS_MALLOC(hstrsz+1);							//sps: Блок ASCII значений считанных байт
-				char*  	twohex=UNS_MALLOC(2);									//sps: Блок ASCII значений считанных байт
+				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);										//sps: Блок шестнадцтеричных значений считанных байт
+				char*  	asblok=UNS_MALLOC(hstrsz+1);										//sps: Блок ASCII значений считанных байт
+				char*  	twohex=UNS_MALLOC(2);												//sps: Блок ASCII значений считанных байт
 
 //-----------------------------------------------------------------------------------------------
-				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2					//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2								//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
 				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
-				char*  		space1=UNS_MALLOC(spcount1+1);						//sps:	Выделяем место под пробелы первого столбца
-				char*  		space2=UNS_MALLOC(spcount2+1);						//sps:	Выделяем место под пробелы второго столбца
+				char*  		space1=UNS_MALLOC(spcount1+1);									//sps:	Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(spcount2+1);									//sps:	Выделяем место под пробелы второго столбца
 
-				memset(space1,0,spcount1+1);									//sps: Чистим фсе
+				memset(space1,0,spcount1+1);												//sps: Чистим фсе
 				memset(space2,0,spcount2+1);
 
 				for(int i=0;i<spcount1;i++)
 				{
-					if(spcount1-i > 0)space1[i] = ' ';							//sps: Набиваем пробелы для первого и второго столбца
+					if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
 					if(spcount2-i > 0)space2[i] = ' ';
 				}
 //-----------------------------------------------------------------------------------------------
 
-				int		mcx=spcount1+1, mcy=0;									//sps: Координаты основного указателя
-				int		scx=0, scy=0;											//sps: Координаты вторичного указателя
-				UINT	fpoint;													//sps: Положение HEX-курсора в файле
+				int		mcx=spcount1+1, mcy=0;												//sps: Координаты основного указателя
+				int		scx=0, scy=0;														//sps: Координаты вторичного указателя
+				UINT	fpoint;																//sps: Положение HEX-курсора в файле
 
 //-----------------------------------------------------------------------------------------------
 
-				bool 	chractive=true;											//sps: Активность ввода буквенных символов в HEX
-				char 	hexchar[6] = {'A','B','C','D','E','F'};					//sps: Набор символов для воода в HEX
-				int 	indexch;												//sps: Индекс символа в массиве
-				UINT	timerch;												//sps: Буфер для засакаемого времени
-				#define CHAREDIT_TIME 4000 										//sps: время задержки последнего нажатия
+				bool 	chractive=true;														//sps: Активность ввода буквенных символов в HEX
+				char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
+				int 	indexch;															//sps: Индекс символа в массиве
+				UINT	timerch;															//sps: Буфер для засакаемого времени
+				#define CHAREDIT_TIME 4000 													//sps: время задержки последнего нажатия
 
 //-----------------------------------------------------------------------------------------------
 				//sps: Проверяем что все создалось правильно
@@ -807,28 +808,28 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				for (;;)
 				{
-					if(need_reconstruct)															//sps: если что-то поменялось - перерисовываем окно
+					if(need_reconstruct)													//sps: если что-то поменялось - перерисовываем окно
 					{
-						memset(offset,0,tstrsz+1);								//sps: Чистим фсе
+						memset(offset,0,tstrsz+1);											//sps: Чистим фсе
 						memset(hexstr,0,tstrsz+1);
 						memset(msg,0,scrsize+20);
 
-						char*	pmsg=msg;										//sps: Создаем указатель для склеивания всех блоков в страницу
+						char*	pmsg=msg;													//sps: Создаем указатель для склеивания всех блоков в страницу
 
 //-----------------------------------------------------------------------------------------------
-						for(int j=point;j<point+hscrsze;j+=hstrsz)				//sps: формируем пять строк
+						for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
 						{
 
-							memset(hxblok,0,hstrsz*2+1);						//sps: Чистим фсе
+							memset(hxblok,0,hstrsz*2+1);									//sps: Чистим фсе
 							memset(asblok,0,hstrsz+1);
 
-							for(int i=j;i<j+hstrsz;i++)							//sps: формируем hxblok и asblok
+							for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
 							{
-								sprintf(twohex,"%02X",wbuf[i]);					//sps: hxblok - шестнадцтеричная форма байт в ASCII
+								sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
 								hxblok[(i-j)*2]=twohex[0];
 								hxblok[(i-j)*2+1]=twohex[1];
 
-								if(wbuf[i]<' ')									//sps: asblok - ASCII имволы байт, с заменой спецсимволов
+								if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
 								{
 									asblok[i-j]=' ';
 								}else{
@@ -853,13 +854,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
-						cursor=LCD_CLIENT_WIDTH*mcy+mcx;								//sps: Вычесляем позицию основного курсора по координатам
+						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
 						scy=mcy;
 						scx=spcount1+hstrsz*2+spcount2+mcx/2;
-						slcurs=LCD_CLIENT_WIDTH*scy+scx;								//sps: Вычесляем позицию вторичного курсора по координатам
+						slcurs=LCD_CLIENT_WIDTH*scy+scx;									//sps: Вычесляем позицию вторичного курсора по координатам
 
-						fpoint=offs+point+(scy*4)+(scx-(spcount1)-1-(hstrsz*2));		//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
-						if(fpoint==(fno->fsize)+1)										//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
+						fpoint=offs+point+(scy*4)+(scx-(spcount1)-1-(hstrsz*2));			//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						if(fpoint==(fno->fsize)+1)											//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
 						{
 							mcx--;
 							cursor=LCD_CLIENT_WIDTH*mcy+mcx;
