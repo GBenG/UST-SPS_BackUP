@@ -35,7 +35,7 @@
 #include "localization/messages.h"
 #include "localization/menu.h"
 #include "printer.h"
-//#include "dex_read_file.h"		//sps
+#include "dex_read_file.h"		//sps
 
 
 #include "arraylist.h"
@@ -325,13 +325,18 @@ static void duplicFile(FILINFO* fno, char* megapath, char* short_name)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static bool readFileBf(FILINFO* fno, char* full_path){
 		#ifndef FUNCTION_DEBUG
-		if(fno->fattrib & AM_WRO)
+		if(fno->fattrib == AM_WRO)
 		{
 			beepError();
 			toast_access_denied();
 			return false;
 		}
 		#endif
+		if(fno->fattrib == AM_DIR)				//sps: Запрещаем открытие папок через просмотрщик / редактор
+			{
+				beepError();
+				return false;
+			}
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
