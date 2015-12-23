@@ -325,18 +325,19 @@ static void duplicFile(FILINFO* fno, char* megapath, char* short_name)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static bool readFileBf(FILINFO* fno, char* full_path){
 		#ifndef FUNCTION_DEBUG
-		if(fno->fattrib == AM_WRO)
+		if(fno->fattrib & AM_WRO)
 		{
 			beepError();
 			toast_access_denied();
 			return false;
 		}
 		#endif
-		if(fno->fattrib == AM_DIR)				//sps: Запрещаем открытие папок через просмотрщик / редактор
+		if(fno->fattrib & AM_DIR)		//sps: Запрещаем открытие папок через просмотрщик / редактор TODO Разобратся со стремным параметром "0x30"
 			{
 				beepError();
 				return false;
 			}
+		//if (fno->fattrib & AM_LFN == AM_LFN)
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
