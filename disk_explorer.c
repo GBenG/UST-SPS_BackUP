@@ -337,7 +337,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				beepError();
 				return false;
 			}
-		//if (fno->fattrib & AM_LFN == AM_LFN)
+		//if ((fno->fattrib & AM_LFN) == AM_LFN)
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
@@ -351,7 +351,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		#define wsize hsize*2												//sps:	Размер буфера
 
 		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT					//sps:	Кол-во символов на экране в TXT
-		#define hscrsze 4*(LCD_CLIENT_HEIGHT-1)				//20			//sps:	Кол-во символов на экране в HEX
+		#define hscrsze 4*(LCD_CLIENT_HEIGHT-1)								//sps:	Кол-во символов на экране в HEX
 		#define tstrsz	LCD_CLIENT_WIDTH									//sps:	Кол-во обрабатываемых символов в строке TXT
 		#define hstrsz 	4													//sps:	Кол-во обрабатываемых символов в строке HEX
 
@@ -778,13 +778,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				char*  	hxblok=UNS_MALLOC(hstrsz*2+1);										//sps: Блок шестнадцтеричных значений считанных байт
 				char*  	asblok=UNS_MALLOC(hstrsz+1);										//sps: Блок ASCII значений считанных байт
-				char*  	twohex=UNS_MALLOC(2);												//sps: Блок ASCII значений считанных байт
+				char*  	twohex=UNS_MALLOC(2);												//sps: Бфер для двухсимольного значения байта в НЕХ-е
 
 //-----------------------------------------------------------------------------------------------
 				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2								//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
 				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
-				char*  		space1=UNS_MALLOC(spcount1+1);									//sps:	Выделяем место под пробелы первого столбца
-				char*  		space2=UNS_MALLOC(spcount2+1);									//sps:	Выделяем место под пробелы второго столбца
+				char*  		space1=UNS_MALLOC(spcount1+1);									//sps: Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(spcount2+1);									//sps: Выделяем место под пробелы второго столбца
 
 				memset(space1,0,spcount1+1);												//sps: Чистим фсе
 				memset(space2,0,spcount2+1);
@@ -805,7 +805,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				bool 	chractive=true;														//sps: Активность ввода буквенных символов в HEX
 				char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
 				int 	indexch;															//sps: Индекс символа в массиве
-				UINT	timerch;															//sps: Буфер для засакаемого времени
+				UINT	timerch;															//sps: Буфер для засыкаемого времени
 				#define CHAREDIT_TIME 4000 													//sps: время задержки последнего нажатия
 
 //-----------------------------------------------------------------------------------------------
