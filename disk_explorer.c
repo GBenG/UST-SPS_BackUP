@@ -843,7 +843,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								}
 							}
 
-							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
+							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам
 
 							//sps: Клеем симпатичную строчку, а она ломается)
 							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
@@ -913,15 +913,18 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
+
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
 							if (key == KEY_UP || key==KEY_PGUP)
 							{
+							//	len = (offs+point+(mcy+1)*hstrsz);
 								mcy=HexScreenUp(mcy);
 							}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && (offs+point+((mcy+1)*hstrsz))<size)
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && ((offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1))<=size))
 							{
+								DBGF("position of cursor => %d", (offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1)))
 								mcy=HexScreenDown(mcy);
 							}
 							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
