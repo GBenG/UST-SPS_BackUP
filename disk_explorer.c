@@ -913,13 +913,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
 							if (key == KEY_UP || key==KEY_PGUP)
 							{
 							//	len = (offs+point+(mcy+1)*hstrsz);
+								DBGF("position of cursor => %d", (offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1)))
 								mcy=HexScreenUp(mcy);
 							}
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) && ((offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1))<=size))
@@ -929,6 +929,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_LEFT) && mcx>=spcount1+1)
 							{
+								DBGF("position of cursor => %d", (offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1)))
 								//--------------------------------------
 								if(mcx == spcount1+1){
 									if(mcy==0) {
@@ -945,6 +946,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if ((key == KEY_RIGHT) && mcx<=spcount1+hstrsz*2)
 							{
+								DBGF("position of cursor => %d", (offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1)))
 								//--------------------------------------
 								if(mcx == spcount1+hstrsz*2){
 									if(mcy==LCD_CLIENT_HEIGHT-2) {
