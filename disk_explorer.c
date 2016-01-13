@@ -447,7 +447,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			//	{
 			///		mcy++;														//sps: Возвращаем курсор на первую строку
 
-					need_reconstruct=true;										//sps: Обновляем данные в окне
+			//		need_reconstruct=true;										//sps: Обновляем данные в окне
 
 					if (point > 0)												//sps: Контроллируем верхний край файла
 					{
@@ -483,7 +483,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			//	{
 			//		mcy--;														//sps: Возвращаем курсор на последнюю строку
 
-					need_reconstruct=true;										//sps: Обновляем данные в окне
+			//		need_reconstruct=true;										//sps: Обновляем данные в окне
 
 					point+=hstrsz;												//sps: Двигаем экран
 
@@ -815,9 +815,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				//sps: Проверяем что все создалось правильно
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
 
-				for (;;)
-				{
-					if(need_reconstruct)													//sps: если что-то поменялось - перерисовываем окно
+				void HexReconstruct()													//sps: если что-то поменялось - перерисовываем окно
 					{
 						memset(offset,0,tstrsz+1);											//sps: Чистим фсе
 						memset(hexstr,0,tstrsz+1);
@@ -857,24 +855,33 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 
-						need_reconstruct=false;												//sps: Заткнем этот блок
+					//	need_reconstruct=false;												//sps: Заткнем этот блок
 					}
+
 //-----------------------------------------------------------------------------------------------
+
+				for (;;)
+				{
+
+					if(need_reconstruct)HexReconstruct();									//sps: Конструируем окно
 
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
 						///////////////////////////////////////////////
 						if (shad_cy<0){
-							shad_cy++;
+							shad_cy=0;
 							mcy=shad_cy;
-							HexScreenUp();
+							HexScreenUp();													//sps: Листаем вверх
+							HexReconstruct();												//sps: Конструируем окно
 						}else{mcy=shad_cy;}
 
 						if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
-							shad_cy--;
+							shad_cy=LCD_CLIENT_HEIGHT-2;
 							mcy=shad_cy;
-							HexScreenDown();
+							HexScreenDown();												//sps: Листаем вниз
+							HexReconstruct();												//sps: Конструируем окно
 						}else{mcy=shad_cy;}
+
 						///////////////////////////////////////////////
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
@@ -883,8 +890,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						slcurs=LCD_CLIENT_WIDTH*scy+scx;									//sps: Вычесляем позицию вторичного курсора по координатам
 
 
-
-						fpoint=offs+point+(scy*4)+(scx-(spcount1)-1-(hstrsz*2));			//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						fpoint=offs+point+(scy*4)+(mcx-(spcount1));							//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						DBGF("fpoint => %d",fpoint)
 						if(fpoint==(fno->fsize)+1)											//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
 						{
 							mcx--;
@@ -1067,6 +1074,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							need_redraw=true;
 							//DBGF("position of cursor => %d", (offs+point+((mcy-1)*hstrsz)+(mcx-1-spcount1)))
 							DBGF("x => %d y => %d", shad_cx,shad_cy)
+							DBGF("offs => %d point => %d", offs,point)
 							continue;
 						}
 //-----------------------------------------------------------------------------------------------
