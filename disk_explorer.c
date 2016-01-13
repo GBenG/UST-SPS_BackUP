@@ -868,13 +868,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
 						///////////////////////////////////////////////
+						//--------------------------------------
 						if (shad_cy<0){
 							shad_cy=0;
 							mcy=shad_cy;
 							HexScreenUp();													//sps: Листаем вверх
 							HexReconstruct();												//sps: Конструируем окно
 						}else{mcy=shad_cy;}
-
+						//--------------------------------------
 						if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
 							shad_cy=LCD_CLIENT_HEIGHT-2;
 							mcy=shad_cy;
@@ -882,6 +883,23 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							HexReconstruct();												//sps: Конструируем окно
 						}else{mcy=shad_cy;}
 
+						//--------------------------------------
+						/*
+						if(mcx == spcount1+hstrsz*2){
+							if(mcy==LCD_CLIENT_HEIGHT-2) {
+								if(fpoint<size) mcx = spcount1+1;							//sps: Уперлись в конец файла? Никуда не перескакиваем
+								HexScreenDown();
+							}else{
+								mcx = spcount1+1;											//sps: Уперлись в  конец строки? Перескочим на предидущуюю
+								mcy++;
+							}
+						}else{
+							if(fpoint<=size)mcx++; 											//sps: Листаем как обычно если мы не в конце файла
+						}
+						shad_cx=mcx;
+						shad_cy=mcy;
+						*/
+						//--------------------------------------
 						///////////////////////////////////////////////
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
@@ -894,7 +912,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						DBGF("fpoint => %d",fpoint)
 						if(fpoint==(fno->fsize)+1)											//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
 						{
-							mcx--;
 							cursor=LCD_CLIENT_WIDTH*mcy+mcx;
 							scx=spcount1+hstrsz*2+spcount2+mcx/2;
 							slcurs=LCD_CLIENT_WIDTH*scy+scx;
@@ -945,27 +962,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							if (key == KEY_UP || key==KEY_PGUP)
 							{
 								shad_cy--;
-								/*
-								if (shad_cy<0){
-									shad_cy++;
-									HexScreenUp();
-								}else{
-									mcy=shad_cy;
-								}
-								*/
 							}
 
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) /*&& ((offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1))<=size)*/)
 							{
 								shad_cy++;
-								/*
-								if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
-									shad_cy--;
-									HexScreenDown();
-								}else{
-									mcy=shad_cy;
-								}
-								*/
 							}
 
 							else if ((key == KEY_LEFT) /*&& mcx>=spcount1+1*/)
