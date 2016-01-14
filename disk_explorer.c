@@ -445,19 +445,19 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			void HexScreenUp()
 			{
-				if (point > 0)												//sps: Контроллируем верхний край файла
+				if (point > 0)													//sps: Контроллируем верхний край файла
 				{
-					if(point<hstrsz){										//sps: Выравниваем начало файла
+					if(point<hstrsz){											//sps: Выравниваем начало файла
 						point=hstrsz;
 					}else{
 						point-=hstrsz;
 					}
 
-					if (offs+point<=offs && offs!=0)						//sps: Буфер закончился, двигаем его вверх, если есть куда
+					if (offs+point<=offs && offs!=0)							//sps: Буфер закончился, двигаем его вверх, если есть куда
 					{
 						point=hsize+hstrsz;
 						offs-=hsize;
-						if(chestat){										//sps: Если были изменения в буфере, предложим сохранить
+						if(chestat){											//sps: Если были изменения в буфере, предложим сохранить
 							eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 							if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 						}
@@ -830,8 +830,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
-
-					//	need_reconstruct=false;												//sps: Заткнем этот блок
 					}
 
 //-----------------------------------------------------------------------------------------------
@@ -844,6 +842,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
+
+						fpoint=(point+shad_cy*hstrsz+shad_cx/2)-1;									//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						//DBGF("fpoint => %d",fpoint)
+
+						if(fpoint<=(fno->fsize)-1){
+
 						//--------------------------------------
 						if(shad_cx < (hex_Lmarg))
 						{
@@ -877,6 +881,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							HexReconstruct();												//sps: Конструируем окно
 						}else{mcy=shad_cy;}
 						//--------------------------------------
+						}else{
+							shad_cx=mcx;
+							shad_cy=mcy;
+						}
 						/////////////////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
@@ -884,15 +892,15 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						scx=spcount1+hstrsz*2+spcount2+mcx/2;
 						slcurs=LCD_CLIENT_WIDTH*scy+scx;									//sps: Вычесляем позицию вторичного курсора по координатам
 
-
-						fpoint=offs+point+(scy*4)+(mcx-(spcount1));							//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						/*
+					 	fpoint=offs+point+(scy*4)+(mcx-(spcount1));							//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
 						DBGF("fpoint => %d",fpoint)
 						if(fpoint==(fno->fsize)+1)											//sps: Если вылезли за конец файла, вернем курсор на место, запирая его в последней позиции
 						{
 							cursor=LCD_CLIENT_WIDTH*mcy+mcx;
 							scx=spcount1+hstrsz*2+spcount2+mcx/2;
 							slcurs=LCD_CLIENT_WIDTH*scy+scx;
-						}
+						}*/
 
 						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ ///////////////////////////////////////////////
 
@@ -940,15 +948,15 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								shad_cy--;
 							}
-							else if ((key == KEY_DOWN || key == KEY_PGDOWN) /*&& ((offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1))<=size)*/)
+							else if ((key == KEY_DOWN || key == KEY_PGDOWN))
 							{
 								shad_cy++;
 							}
-							else if ((key == KEY_LEFT) /*&& mcx>=spcount1+1*/)
+							else if ((key == KEY_LEFT))
 							{
 								shad_cx--;
 							}
-							else if ((key == KEY_RIGHT) /*&& mcx<=spcount1+hstrsz*2*/)
+							else if ((key == KEY_RIGHT))
 							{
 								shad_cx++;
 							}
@@ -974,14 +982,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								UNS_FREE(asblok);
 								UNS_FREE(space1);
 								UNS_FREE(space2);
-								if(chestat){						//sps: Если были изменения в буфере, предложим сохранить
+								if(chestat){				//sps: Если были изменения в буфере, предложим сохранить
 									eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 									if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 								}
 								return key;
 								break;
 							}
-							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄] TODO Костыль для ровной печати НЕХ-окон, выпилить!
+							else if (key == KEY_PRINT)		//sps: [►☻◄ АДСКИЙ КОСТЫЛЬ ►☻◄] TODO Костыль для ровной печати НЕХ-окон, как руки дойдут - выпилить!
 							{
 								msg[0]='\n';
 								msg[15]='\n';
@@ -1014,9 +1022,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								beepError();
 							}
 							need_redraw=true;
-							//DBGF("position of cursor => %d", (offs+point+((mcy-1)*hstrsz)+(mcx-1-spcount1)))
-							DBGF("x => %d y => %d", shad_cx,shad_cy)
-							DBGF("offs => %d point => %d", offs,point)
+							//DBGF("x => %d y => %d", shad_cx,shad_cy)
+							//DBGF("offs => %d point => %d", offs,point)
 							continue;
 						}
 //-----------------------------------------------------------------------------------------------
