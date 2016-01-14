@@ -355,6 +355,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		#define tstrsz	LCD_CLIENT_WIDTH									//sps:	Кол-во обрабатываемых символов в строке TXT
 		#define hstrsz 	4													//sps:	Кол-во обрабатываемых символов в строке HEX
 
+		#define spcount2  (LCD_CLIENT_WIDTH-13)/2							//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+		#define spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
+		#define hex_Lmarg (spcount1+1)										//sps: Ширина левого отступа в НЕХ-просмотре
+		#define hex_Rmarg (spcount2+1)										//sps: Ширина правого отступа в НЕХ-просмотре
+
 //-----------------------------------------------------------------------------------------------
 
 		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
@@ -438,56 +443,32 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			}
 //================================================================================================
 //================================================================================================
-			//int HexScreenUp(int mcy)
 			void HexScreenUp()
 			{
-		//		mcy--;
+				if (point > 0)												//sps: Контроллируем верхний край файла
+				{
+					if(point<hstrsz){										//sps: Выравниваем начало файла
+						point=hstrsz;
+					}else{
+						point-=hstrsz;
+					}
 
-			//	if(mcy<0)														//sps: Если дошли до края экрана
-			//	{
-			///		mcy++;														//sps: Возвращаем курсор на первую строку
-
-			//		need_reconstruct=true;										//sps: Обновляем данные в окне
-
-					if (point > 0)												//sps: Контроллируем верхний край файла
+					if (offs+point<=offs && offs!=0)						//sps: Буфер закончился, двигаем его вверх, если есть куда
 					{
-						if(point<hstrsz){										//sps: Выравниваем начало файла
-							point=hstrsz;
-						}else{
-							point-=hstrsz;
-						}
-
-					//	DBGF("point = %d %d",point,offs+point);
-
-						if (offs+point<=offs && offs!=0)						//sps: Буфер закончился, двигаем его вверх, если есть куда
-						{
-							point=hsize+hstrsz;
-							offs-=hsize;
-							if(chestat){										//sps: Если были изменения в буфере, предложим сохранить
-								eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
-								if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
-							}
+						point=hsize+hstrsz;
+						offs-=hsize;
+						if(chestat){										//sps: Если были изменения в буфере, предложим сохранить
+							eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
+							if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 						}
 					}
-				//}
-			//	return mcy;
+				}
 			}
 //================================================================================================
 //================================================================================================
-			//int HexScreenDown(int mcy)
 			void HexScreenDown()
 			{
-			//	mcy++;															//sps: Двигаем курсор вниз
-
-			//	if(mcy>(LCD_CLIENT_HEIGHT-2))									//sps: Если дошли до края экрана
-			//	{
-			//		mcy--;														//sps: Возвращаем курсор на последнюю строку
-
-			//		need_reconstruct=true;										//sps: Обновляем данные в окне
-
 					point+=hstrsz;												//sps: Двигаем экран
-
-			//		DBGF("point = %d %d",point,offs+point);
 
 					if (offs+point+hscrsze>=offs+wsize)							//sps: Если кончился буфер, загружаем новый кусок
 					{
@@ -498,8 +479,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 						}
 					}
-			//	}
-			//	return mcy;
 			}
 //================================================================================================
 //================================================================================================ SPS :: Hex-просмотрщик
@@ -517,13 +496,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  	twohex=UNS_MALLOC(2);												//sps: Блок ASCII значений считанных байт
 
 //-----------------------------------------------------------------------------------------------
-				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2								//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
-				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
-				char*  		space1=UNS_MALLOC(spcount1+1);									//sps:	Выделяем место под пробелы первого столбца
-				char*  		space2=UNS_MALLOC(spcount2+1);									//sps:	Выделяем место под пробелы второго столбца
 
-				memset(space1,0,spcount1+1);												//sps: Чистим фсе
-				memset(space2,0,spcount2+1);
+				char*  		space1=UNS_MALLOC(hex_Lmarg);									//sps:	Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(hex_Rmarg);									//sps:	Выделяем место под пробелы второго столбца
+
+				memset(space1,0,hex_Lmarg);												//sps: Чистим фсе
+				memset(space2,0,hex_Rmarg);
 
 				for(int i=0;i<spcount1;i++)
 				{
@@ -783,13 +761,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  	twohex=UNS_MALLOC(2);												//sps: Бфер для двухсимольного значения байта в НЕХ-е
 
 //-----------------------------------------------------------------------------------------------
-				#define 	spcount2  (LCD_CLIENT_WIDTH-13)/2								//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
-				#define 	spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
-				char*  		space1=UNS_MALLOC(spcount1+1);									//sps: Выделяем место под пробелы первого столбца
-				char*  		space2=UNS_MALLOC(spcount2+1);									//sps: Выделяем место под пробелы второго столбца
+				char*  		space1=UNS_MALLOC(hex_Lmarg);									//sps: Выделяем место под пробелы первого столбца
+				char*  		space2=UNS_MALLOC(hex_Rmarg);									//sps: Выделяем место под пробелы второго столбца
 
-				memset(space1,0,spcount1+1);												//sps: Чистим фсе
-				memset(space2,0,spcount2+1);
+				memset(space1,0,hex_Lmarg);												//sps: Чистим фсе
+				memset(space2,0,hex_Rmarg);
 
 				for(int i=0;i<spcount1;i++)
 				{
@@ -798,8 +774,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				}
 //-----------------------------------------------------------------------------------------------
 
-				int		mcx=spcount1+1, mcy=0;												//sps: Координаты основного указателя
-				int		shad_cx=0, shad_cy=0;												//sps: Теневые координаты для предпроверки граничных условий
+				int		mcx=hex_Lmarg, mcy=0;												//sps: Координаты основного указателя
+				int		shad_cx=mcx, shad_cy=mcy;											//sps: Теневые координаты для предпроверки граничных условий
 				int		scx=0, scy=0;														//sps: Координаты вторичного указателя
 				UINT	fpoint;																//sps: Положение HEX-курсора в файле
 
@@ -867,7 +843,25 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
-						///////////////////////////////////////////////
+						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
+						//--------------------------------------
+						if(shad_cx < (hex_Lmarg))
+						{
+							if ((point+offs+shad_cy)!=0)									//sps: Уперлись в начало файла? Никуда не перескакиваем
+							{
+								shad_cx = (hex_Lmarg+hstrsz*2)-1;							//sps: Уперлись в начало строки? Перескочим на предидущуюю
+								shad_cy--;
+							}else{shad_cx = hex_Lmarg;}
+						}
+						//--------------------------------------
+						if(shad_cx >= (hex_Lmarg+hstrsz*2))
+						{
+							shad_cx = hex_Lmarg;											//sps: Уперлись в  конец строки? Перескочим на предидущуюю
+							shad_cy++;
+						}
+						//--------------------------------------
+						mcx=shad_cx;
+						mcy=shad_cy;
 						//--------------------------------------
 						if (shad_cy<0){
 							shad_cy=0;
@@ -882,25 +876,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							HexScreenDown();												//sps: Листаем вниз
 							HexReconstruct();												//sps: Конструируем окно
 						}else{mcy=shad_cy;}
-
 						//--------------------------------------
-						/*
-						if(mcx == spcount1+hstrsz*2){
-							if(mcy==LCD_CLIENT_HEIGHT-2) {
-								if(fpoint<size) mcx = spcount1+1;							//sps: Уперлись в конец файла? Никуда не перескакиваем
-								HexScreenDown();
-							}else{
-								mcx = spcount1+1;											//sps: Уперлись в  конец строки? Перескочим на предидущуюю
-								mcy++;
-							}
-						}else{
-							if(fpoint<=size)mcx++; 											//sps: Листаем как обычно если мы не в конце файла
-						}
-						shad_cx=mcx;
-						shad_cy=mcy;
-						*/
-						//--------------------------------------
-						///////////////////////////////////////////////
+						/////////////////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
 						scy=mcy;
@@ -917,7 +894,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							slcurs=LCD_CLIENT_WIDTH*scy+scx;
 						}
 
-//-----------------------------------------------------------------------------------------------
+						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ ///////////////////////////////////////////////
 
 						sScreen* screen = &window->screen;
 
@@ -963,53 +940,17 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								shad_cy--;
 							}
-
 							else if ((key == KEY_DOWN || key == KEY_PGDOWN) /*&& ((offs+point+((mcy+1)*hstrsz)+(mcx-1-spcount1))<=size)*/)
 							{
 								shad_cy++;
 							}
-
 							else if ((key == KEY_LEFT) /*&& mcx>=spcount1+1*/)
 							{
 								shad_cx--;
-								/*
-								//--------------------------------------
-								if(mcx == spcount1+1){
-									if(mcy==0) {
-										if (!(point+offs+mcy==0)) mcx = spcount1+hstrsz*2;	//sps: Уперлись в начало файла? Никуда не перескакиваем
-										HexScreenUp();
-									}else{
-										mcx = spcount1+hstrsz*2;							//sps: Уперлись в начало строки? Перескочим на предидущуюю
-										mcy--;
-									}
-								}else{
-									if(!(mcx==spcount1+1 && point+offs+mcy==0)) mcx--; 		//sps: Листаем как обычно если мы не в начале файла
-								}
-								//--------------------------------------
-								shad_cx=mcx;
-								shad_cy=mcy;
-								*/
 							}
 							else if ((key == KEY_RIGHT) /*&& mcx<=spcount1+hstrsz*2*/)
 							{
 								shad_cx++;
-								/*
-								//--------------------------------------
-								if(mcx == spcount1+hstrsz*2){
-									if(mcy==LCD_CLIENT_HEIGHT-2) {
-										if(fpoint<size) mcx = spcount1+1;					//sps: Уперлись в конец файла? Никуда не перескакиваем
-										HexScreenDown();
-									}else{
-										mcx = spcount1+1;									//sps: Уперлись в  конец строки? Перескочим на предидущуюю
-										mcy++;
-									}
-								}else{
-									if(fpoint<=size)mcx++; 									//sps: Листаем как обычно если мы не в конце файла
-								}
-								//--------------------------------------
-								shad_cx=mcx;
-								shad_cy=mcy;
-								*/
 							}
 							else if (key == KEY_RSOFT)
 							{
