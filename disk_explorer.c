@@ -377,6 +377,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			{
 					FIL 	fil;
 
+					DBG("Ololo");
+
 					if(rewrite==1) {
 
 						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
@@ -391,6 +393,19 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
 
 					if(fres==FR_OK)
+					{
+
+						if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF
+
+						memset(wbuf,0,wsize);						//sps:	Чистим буфер
+
+						f_lseek(&fil, offs);						//sps:	Сдвигаем позицию считывания
+
+						fres=f_read(&fil,wbuf,grab,&len);			//sps:	Читаем из файла
+						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
+					}
+
+				/*	if(fres==FR_OK)
 					{
 																				//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
 						if(((fno->fsize)-offs)>=wsize){
@@ -410,7 +425,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 						sprintf(wbuf,"%s\0",wbuf);								//sps:	Затыкаем строку в буфере
 					}
-
+*/
 						f_close(&fil);											//sps:	Закрываем файл
 			}
 //================================================================================================
@@ -545,7 +560,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								}
 							}
 
-							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
+							sprintf(offset,"OFFSET:%08X",offs+j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
 
 							//sps: Клеем симпатичную строчку, а она ломается)
 							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
@@ -553,7 +568,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
 						}
-						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+						sprintf(offset,"OFFSET:%08X",offs+point);							//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 //-----------------------------------------------------------------------------------------------
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
@@ -764,7 +779,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  		space1=UNS_MALLOC(hex_Lmarg);									//sps: Выделяем место под пробелы первого столбца
 				char*  		space2=UNS_MALLOC(hex_Rmarg);									//sps: Выделяем место под пробелы второго столбца
 
-				memset(space1,0,hex_Lmarg);												//sps: Чистим фсе
+				memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
 				memset(space2,0,hex_Rmarg);
 
 				for(int i=0;i<spcount1;i++)
@@ -820,7 +835,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								}
 							}
 
-							sprintf(offset,"OFFSET:%08X",j);								//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам
+							sprintf(offset,"OFFSET:%08X",offs+j);							//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам
 
 							//sps: Клеем симпатичную строчку, а она ломается)
 							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
@@ -828,7 +843,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
 						}
-						sprintf(offset,"OFFSET:%08X",point);								//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+						sprintf(offset,"OFFSET:%08X",offs+point);							//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 						asblok[scrsize+1]=0;												//sps: нуль-терменируем последнюю строку
 					}
 
@@ -1115,7 +1130,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 											};
 										}
 										}
-										else if ((key == KEY_DOWN || key == KEY_PGDOWN) /* && offs+point+scrsize < size*/)
+										else if ((key == KEY_DOWN || key == KEY_PGDOWN))
 										{
 											cursor+=tstrsz;
 											mcy++;
@@ -1185,8 +1200,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
-				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
-					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
+					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+				//	rkey = HexEdit(window);									//sps: Открываем HEX-редактор
 
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
