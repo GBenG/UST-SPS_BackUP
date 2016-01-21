@@ -858,49 +858,55 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					{
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
-						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;									//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;							//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
 						//DBGF("fpoint => %d",fpoint)
 						//DBGF("offs => %d point => %d", offs,point)
 
 						if(fpoint<=(fno->fsize)-1){
 
 						//--------------------------------------
-						if(shad_cx < (hex_Lmarg))
-						{
-							if ((point+offs+shad_cy)!=0)									//sps: Уперлись в начало файла? Никуда не перескакиваем
+							if(shad_cx < (hex_Lmarg))
 							{
-								shad_cx = (hex_Lmarg+hstrsz*2)-1;							//sps: Уперлись в начало строки? Перескочим на предидущуюю
-								shad_cy--;
-							}else{shad_cx = hex_Lmarg;}
-						}
-						//--------------------------------------
-						if(shad_cx >= (hex_Lmarg+hstrsz*2))
-						{
-							shad_cx = hex_Lmarg;											//sps: Уперлись в  конец строки? Перескочим на предидущуюю
-							shad_cy++;
-						}
-						//--------------------------------------
-						mcx=shad_cx;
-						mcy=shad_cy;
-						//--------------------------------------
-						if (shad_cy<0){
-							shad_cy=0;
+								if ((point+offs+shad_cy)!=0)									//sps: Уперлись в начало файла? Никуда не перескакиваем
+								{
+									shad_cx = (hex_Lmarg+hstrsz*2)-1;							//sps: Уперлись в начало строки? Перескочим на предидущуюю
+									shad_cy--;
+								}else{shad_cx = hex_Lmarg;}
+							}
+							//--------------------------------------
+							if(shad_cx >= (hex_Lmarg+hstrsz*2))
+							{
+								shad_cx = hex_Lmarg;											//sps: Уперлись в  конец строки? Перескочим на предидущуюю
+								shad_cy++;
+							}
+							//--------------------------------------
+							mcx=shad_cx;
 							mcy=shad_cy;
-							HexScreenUp();													//sps: Листаем вверх
-							HexReconstruct();												//sps: Конструируем окно
-						}else{mcy=shad_cy;}
-						//--------------------------------------
-						if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
-							shad_cy=LCD_CLIENT_HEIGHT-2;
-							mcy=shad_cy;
-							HexScreenDown();												//sps: Листаем вниз
-							HexReconstruct();												//sps: Конструируем окно
-						}else{mcy=shad_cy;}
-						//--------------------------------------
+							//--------------------------------------
+							if (shad_cy<0){
+								shad_cy=0;
+								mcy=shad_cy;
+								HexScreenUp();													//sps: Листаем вверх
+								HexReconstruct();												//sps: Конструируем окно
+							}else{mcy=shad_cy;}
+							//--------------------------------------
+							if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
+								shad_cy=LCD_CLIENT_HEIGHT-2;
+								mcy=shad_cy;
+								HexScreenDown();												//sps: Листаем вниз
+								HexReconstruct();												//sps: Конструируем окно
+							}else{mcy=shad_cy;}
+							//--------------------------------------
 						}else{
+						//	shad_cx=((((fno->fsize)-offs-point)*2)-hstrsz*2*(LCD_CLIENT_HEIGHT-2))+1;
+						//	shad_cy=4;
+						//	mcx=shad_cx;														//sps: Эксперемент по установке курсора на последний символ
+						//	mcy=shad_cy;
+						//	DBGF("EOF shad_cx => %d", ((fno->fsize)-offs-point)*2)
 							shad_cx=mcx;
 							shad_cy=mcy;
 						}
+					//	DBGF("fpoint => %d shad_cx => %d shad_cy => %d", fpoint,shad_cx,shad_cy)
 						/////////////////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
