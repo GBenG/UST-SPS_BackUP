@@ -898,15 +898,21 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}else{mcy=shad_cy;}
 							//--------------------------------------
 						}else{
-						//	shad_cx=((((fno->fsize)-offs-point)*2)-hstrsz*2*(LCD_CLIENT_HEIGHT-2))+1;
-						//	shad_cy=4;
-						//	mcx=shad_cx;														//sps: Эксперемент по установке курсора на последний символ
-						//	mcy=shad_cy;
-						//	DBGF("EOF shad_cx => %d", ((fno->fsize)-offs-point)*2)
-							shad_cx=mcx;
-							shad_cy=mcy;
+							if((offs+point+hstrsz*(LCD_CLIENT_HEIGHT-1))>=(fno->fsize)) 		//sps: Ecле на экране или сразу за ним конец файла
+							{
+								shad_cx=mcx;													//sps: Запрещаем курсору двигатся дальше
+								shad_cy=mcy;
+							}else{																//sps: Если нет ->
+								HexScreenDown();												//sps: Листаем вниз
+								HexReconstruct();												//sps: Конструируем окно
+																								//sps: Устанавливаем курсор на последний символ
+								shad_cx=((((fno->fsize)-offs-point)*2)-hstrsz*2*(LCD_CLIENT_HEIGHT-2))+1;
+								shad_cy=LCD_CLIENT_HEIGHT-2;
+								mcx=shad_cx;
+								mcy=shad_cy;
+							}
 						}
-					//	DBGF("fpoint => %d shad_cx => %d shad_cy => %d", fpoint,shad_cx,shad_cy)
+						//DBGF("offs => %d point => %d fpoint => %d shad_cx => %d shad_cy => %d", offs,point,fpoint,shad_cx,shad_cy)
 						/////////////////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
