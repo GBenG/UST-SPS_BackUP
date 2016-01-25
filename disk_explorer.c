@@ -391,7 +391,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					}
 
 					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
-
+/*
 					if(fres==FR_OK)
 					{
 
@@ -404,14 +404,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						fres=f_read(&fil,wbuf,grab,&len);			//sps:	Читаем из файла
 						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
 					}
-
-				/*	if(fres==FR_OK)
+*/
+					if(fres==FR_OK)
 					{
 																				//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
-						if(((fno->fsize)-offs)>=wsize){
+						if(((fno->fsize)-offs)>=hsize){
 							if(offs!=0){grab=hsize;}else{grab=wsize;}
 						}else{
-							grab=((fno->fsize)-offs);
+							grab=((fno->fsize)-(offs));
 						}
 
 						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
@@ -423,9 +423,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}else{
 							fres=f_read(&fil,wbuf,grab,&len);					//sps:	Читаем из файла целый буфер
 						}
-						sprintf(wbuf,"%s\0",wbuf);								//sps:	Затыкаем строку в буфере
+
+						wbuf[grab]=0;
+						//sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
 					}
-*/
+
 						f_close(&fil);											//sps:	Закрываем файл
 			}
 //================================================================================================
