@@ -407,16 +407,22 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 */
 					if(fres==FR_OK)
 					{
-																				//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
-						if(((fno->fsize)-offs)>=hsize){
-							if(offs!=0){grab=hsize;}else{grab=wsize;}
-						}else{
-							grab=((fno->fsize)-(offs));
-						}
-
 						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
 
-						f_lseek(&fil, offs);									//sps:	Сдвигаем позицию считывания
+						//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
+						if(((fno->fsize)-offs+hsize)>=hsize){
+							if(offs!=0){
+								grab=hsize;
+								f_lseek(&fil, offs+hsize);						//sps:	Сдвигаем позицию считывания
+							}else{
+								grab=wsize;
+								f_lseek(&fil, offs);							//sps:	Сдвигаем позицию считывания
+							}
+						}else{
+							grab=((fno->fsize)-(offs));							//sps: [►☻◄ СЮДА НЕ ПОПАДАЕМ (О_о) ►☻◄]
+						}
+
+						memset(wbuf+hsize,0,hsize);								//sps: Чистим вторые пол буфера т.к. заполним его не полностью
 
 						if(offs!=0){
 							fres=f_read(&fil,wbuf+hsize,grab,&len);				//sps:	Читаем из файла пол буфера
