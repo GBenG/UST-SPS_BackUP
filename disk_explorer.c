@@ -382,8 +382,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					if(rewrite==1) {
 
 						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
+
 						if(fres==FR_OK)
 						{
+							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
 							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
 							chestat=false;										//sps:  Изменения в буфере сохранены
 						}
@@ -391,10 +393,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					}
 
 					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
-/*
+
 					if(fres==FR_OK)
 					{
-
 						if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF
 
 						memset(wbuf,0,wsize);						//sps:	Чистим буфер
@@ -404,8 +405,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						fres=f_read(&fil,wbuf,grab,&len);			//sps:	Читаем из файла
 						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
 					}
-*/
-					if(fres==FR_OK)
+
+		/*			if(fres==FR_OK)
 					{
 						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
 
@@ -433,7 +434,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						wbuf[grab]=0;
 						//sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
 					}
-
+*/
 						f_close(&fil);											//sps:	Закрываем файл
 			}
 //================================================================================================
@@ -523,7 +524,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char*  		space1=UNS_MALLOC(hex_Lmarg);									//sps:	Выделяем место под пробелы первого столбца
 				char*  		space2=UNS_MALLOC(hex_Rmarg);									//sps:	Выделяем место под пробелы второго столбца
 
-				memset(space1,0,hex_Lmarg);												//sps: Чистим фсе
+				memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
 				memset(space2,0,hex_Rmarg);
 
 				for(int i=0;i<spcount1;i++)
@@ -568,7 +569,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								}
 							}
 
-							sprintf(offset,"OFFSET:%08X",offs+j);								//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
+							sprintf(offset,"OFFSET:%08X",offs+j);							//sps: получаем мещение OFFSET в шестнадцтеричном формате по строкам
 
 							//sps: Клеем симпатичную строчку, а она ломается)
 							sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
@@ -766,6 +767,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 										continue;
 									}
 //-----------------------------------------------------------------------------------------------
+									taskYIELD();
 							}
 							return KEY_NONE;
 						}
@@ -857,12 +859,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
+			//	HexReconstruct();															//sps: Конструируем окно
+
 				for (;;)
 				{
+						if(need_reconstruct){
+							HexReconstruct();													//sps: Конструируем окно
+							need_reconstruct=false;
+						}
 
-					if(need_reconstruct)HexReconstruct();									//sps: Конструируем окно
-
-					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
+					if(need_redraw)																//sps: если что-то поменялось - перерисовываем окно
 					{
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
@@ -1063,6 +1069,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							continue;
 						}
 //-----------------------------------------------------------------------------------------------
+						taskYIELD();
 				}
 				return KEY_NONE;
 			}
