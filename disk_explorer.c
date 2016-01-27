@@ -376,9 +376,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер
 			{
 					FIL 	fil;
-
 					DBG("ReGrab");
 
+//----------------------------------------------------------------- HALF-BUFF
 					if(rewrite==1) {
 
 						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
@@ -405,8 +405,24 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						fres=f_read(&fil,wbuf,grab,&len);			//sps:	Читаем из файла
 						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
 					}
+//----------------------------------------------------------------- FULL-BUFF
+		/*
+		 	 	 	if(rewrite==1) {
 
-		/*			if(fres==FR_OK)
+						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
+
+						if(fres==FR_OK)
+						{
+							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
+							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
+							chestat=false;										//sps:  Изменения в буфере сохранены
+						}
+						f_close(&fil);											//sps:	Закрываем файл
+					}
+
+					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
+
+		  			if(fres==FR_OK)
 					{
 						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
 
