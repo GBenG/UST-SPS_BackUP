@@ -872,7 +872,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					{
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
-						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;							//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						int UpEdge=offs+point+shad_cy;											//sps: Проверка верхней грани
+						if (UpEdge>0){
+							fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;						//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						}else{fpoint=0;}
+
 						//DBGF("fpoint => %d",fpoint)
 						//DBGF("offs => %d point => %d", offs,point)
 
