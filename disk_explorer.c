@@ -379,7 +379,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					DBG("ReGrab");
 
 //----------------------------------------------------------------- HALF-BUFF
-					if(rewrite==1) {
+	/*					if(rewrite==1) {
 
 						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
 
@@ -403,16 +403,19 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						f_lseek(&fil, offs);						//sps:	Сдвигаем позицию считывания
 
 						fres=f_read(&fil,wbuf,grab,&len);			//sps:	Читаем из файла
-						sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
-					}
+						//sprintf(wbuf,"%s\0",wbuf);					//sps:	Затыкаем строку в буфере
+						wbuf[grab]=0;
+					}*/
 //----------------------------------------------------------------- FULL-BUFF
-		/*
+
 		 	 	 	if(rewrite==1) {
 
 						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
 
 						if(fres==FR_OK)
 						{
+							if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва байт
+
 							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
 							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
 							chestat=false;										//sps:  Изменения в буфере сохранены
@@ -426,8 +429,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					{
 						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
 
+					//	DBGF("(fno->fsize) = %d | offs = %d | hsize = %d",(fno->fsize),offs,hsize)
+					//	DBGF("((fno->fsize)-offs+hsize) = %d", ((fno->fsize)-(offs+hsize)))
+
 						//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
-						if(((fno->fsize)-offs+hsize)>=hsize){
+
+					//	if(((fno->fsize)-(offs+hsize))<hsize){
 							if(offs!=0){
 								grab=hsize;
 								f_lseek(&fil, offs+hsize);						//sps:	Сдвигаем позицию считывания
@@ -435,9 +442,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								grab=wsize;
 								f_lseek(&fil, offs);							//sps:	Сдвигаем позицию считывания
 							}
-						}else{
-							grab=((fno->fsize)-(offs));							//sps: [►☻◄ СЮДА НЕ ПОПАДАЕМ (О_о) ►☻◄]
-						}
+					//	}else{
+					//		grab=((fno->fsize)-(offs+hsize));					//sps: [►☻◄ СЮДА НЕ ПОПАДАЕМ (О_о) ►☻◄]
+					//		DBG("Skoro EOF");
+					//	}
 
 						memset(wbuf+hsize,0,hsize);								//sps: Чистим вторые пол буфера т.к. заполним его не полностью
 
@@ -447,10 +455,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							fres=f_read(&fil,wbuf,grab,&len);					//sps:	Читаем из файла целый буфер
 						}
 
-						wbuf[grab]=0;
+						wbuf[offs+grab]=0;
 						//sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
 					}
-*/
+
 						f_close(&fil);											//sps:	Закрываем файл
 			}
 //================================================================================================
