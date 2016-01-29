@@ -457,12 +457,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					{
 						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
 
-					//	DBGF("(fno->fsize) = %d | offs = %d | hsize = %d",(fno->fsize),offs,hsize)
-					//	DBGF("((fno->fsize)-offs+hsize) = %d", ((fno->fsize)-(offs+hsize)))
-
-						//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF не забыть полностью загрузить первый буфер
-
-					//	if(((fno->fsize)-(offs+hsize))<hsize){
 							if(offs!=0){
 								grab=hsize;
 								f_lseek(&fil, offs+hsize);						//sps:	Сдвигаем позицию считывания
@@ -470,10 +464,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								grab=wsize;
 								f_lseek(&fil, offs);							//sps:	Сдвигаем позицию считывания
 							}
-					//	}else{
-					//		grab=((fno->fsize)-(offs+hsize));					//sps: [►☻◄ СЮДА НЕ ПОПАДАЕМ (О_о) ►☻◄]
-					//		DBG("Skoro EOF");
-					//	}
 
 						memset(wbuf+hsize,0,hsize);								//sps: Чистим вторые пол буфера т.к. заполним его не полностью
 
@@ -483,8 +473,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							fres=f_read(&fil,wbuf,grab,&len);					//sps:	Читаем из файла целый буфер
 						}
 
-						wbuf[offs+grab]=0;
-						//sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
+						wbuf[offs+grab]=0;										//sps:	Затыкаем строку в буфере
 					}
 
 						f_close(&fil);											//sps:	Закрываем файл
@@ -578,6 +567,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
 						hxblok[(i-j)*2]=twohex[0];
 						hxblok[(i-j)*2+1]=twohex[1];
+
+						if ((offs+i)>((fno->fsize)-1)){								//sps: Забиваем пробелами все что больше размера файла
+							hxblok[(i-j)*2]=LCD_SYMBOL_CHESS;
+							hxblok[(i-j)*2+1]=LCD_SYMBOL_CHESS;
+						}
 
 						if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
 						{
@@ -815,12 +809,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					if(need_redraw)																//sps: если что-то поменялось - перерисовываем окно
 					{
+
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
-						int UpEdge=offs+point+shad_cy;											//sps: Проверка верхней грани
-						if (UpEdge>0){
-							fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;						//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
-						}else{fpoint=0;}
+						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;						//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						if ((fpoint+hstrsz)<hstrsz){fpoint=0;}								//sps: Работа с первой строкой
+
+					//	DBGF("fpoint => %d",fpoint)
+					//	DBGF("offs => %d point => %d", offs,point)
 
 						if(fpoint<=(fno->fsize)-1){
 
@@ -1148,8 +1144,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
-					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
-				//	rkey = HexEdit(window);									//sps: Открываем HEX-редактор
+				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
 
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
