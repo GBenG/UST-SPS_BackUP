@@ -1328,6 +1328,7 @@ static void diskExplorer(){
 					else if(key==KEY_1)									//sps: Справка
 					{
 						LCDUI_Supervisor_Toast(LANG_DISKEXP_HELP,2000);
+						//LCDUI_UniversalAwaitScreen(LANG_DISKEXP_HELP, ehjNone, euastNone, euasbCancelOnly, -4000, NULL, NULL, NULL, NULL, NULL);
 					}
 //--------------------------------------------------------------------------------------------------------------------------
 					else if(key==KEY_8)									// Удалить файл
