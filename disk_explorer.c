@@ -368,9 +368,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		unsigned int offs=0;					//sps:	Смещение буфера по файлу
 		unsigned int grab;						//sps:	Кол-во загружаеммых в буфер байт
 
-		bool		 chestat=false;				//sps: Статус редактирования
-		bool 		 need_redraw;				//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
-		bool 		 need_reconstruct;			//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
+		bool		 chestat=false;				//sps: 	Было ли редактирование?
+		bool 		 need_redraw;				//sps: 	Пнуть в ТРУ если нужно перисовать окошко при перемещении курсора
+		bool 		 need_reconstruct;			//sps: 	Пнуть в ТРУ если нужно перисовать окошко новой инфой
 
 //-----------------------------------------------------------------------------------------------
 
@@ -384,8 +384,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		char*  		space1=UNS_MALLOC(hex_Lmarg);									//sps: Выделяем место под пробелы первого столбца
-		char*  		space2=UNS_MALLOC(hex_Rmarg);									//sps: Выделяем место под пробелы второго столбца
+		char*  	space1=UNS_MALLOC(hex_Lmarg);										//sps: Выделяем место под пробелы первого столбца
+		char*  	space2=UNS_MALLOC(hex_Rmarg);										//sps: Выделяем место под пробелы второго столбца
 
 		memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
 		memset(space2,0,hex_Rmarg);
@@ -395,6 +395,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
 			if(spcount2-i > 0)space2[i] = ' ';
 		}
+//-----------------------------------------------------------------------------------------------
+
+		bool 	chractive=true;														//sps: Активность ввода буквенных символов в HEX
+		char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
+		int 	indexch;															//sps: Индекс символа в массиве
+		UINT	timerch;															//sps: Буфер для засыкаемого времени
+		#define CHAREDIT_TIME 400 													//sps: время задержки последнего нажатия
+
 //-----------------------------------------------------------------------------------------------
 
 		//sps: Проверяем что все создалось правильно
@@ -485,14 +493,38 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			void ChangeCHAR(char* msg, int mcx, int mcy, int scx, int scy, char key)
 			{
-				char* hidhex=UNS_MALLOC(2+1);
-				int		icursor;												//sps: Вычесляем позицию урсора в буфере для замены симола
+			//	char* hidhex=UNS_MALLOC(2+1);
+				char 	hidhex[3];
+				int		icursor;			 									//sps: Вычесляем позицию курсора в буфере для замены симола
 				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-				icursor = (point+mcy*hstrsz+mcx/2)-1;							//sps: Вычесляем позицию урсора в буфере для замены симола
+
+				icursor = (point+mcy*hstrsz+mcx/2)-1;							//sps: Вычесляем позицию курсора в буфере для замены симола
 				hcursor = (LCD_CLIENT_WIDTH*mcy+mcx)-1;
 
-				msg[hcursor+1]=key;												//sps: Заменяем символ
+			//	msg[hcursor+1]=hexchar[3];
+				for(indexch=0;indexch<=5;indexch++){
+					if (hexchar[indexch]==msg[hcursor+1])break;
+				}
+				DBGF("Symbol = %c",msg[hcursor+1])
+				DBGF("Symbol index = %d",indexch)
+
+				if(key=='X')
+				{
+					if(indexch<=5){
+						if(indexch==5){
+							msg[hcursor+1]=hexchar[0];
+						}else{
+							msg[hcursor+1]=hexchar[indexch+1];
+						}
+					}else{
+						msg[hcursor+1]=hexchar[0];								//sps: Заменяем символ
+					}
+				}else{
+					msg[hcursor+1]=key;											//sps: Заменяем символ
+				}
+
+
 
 				if(((mcy*hstrsz*2+mcx)-1)&1){									//sps: Определяем на какой части хекс-представления символа находится курсор
 					sprintf(hidhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);		//sps: Забираем два нужных символа при нечетином курсоре
@@ -500,14 +532,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					sprintf(hidhex,"%c%c",msg[hcursor],msg[hcursor+1]);			//sps: Забираем два нужных символа при четином курсоре
 				}
 
-				msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
+		//		msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
 
 				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: Записываем новый символ в буфер
 
 				need_reconstruct=true;											//sps: Перестраеваем окно
 				chestat=true;													//sps: Буфер редактировался
 
-				UNS_FREE(hidhex);
+		//		UNS_FREE(hidhex);
 			}
 //================================================================================================
 // SPS :: Функция перелистывания НЕХ-страниц вверх
@@ -845,14 +877,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-				bool 	chractive=true;														//sps: Активность ввода буквенных символов в HEX
-				char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
-				int 	indexch;															//sps: Индекс символа в массиве
-				UINT	timerch;															//sps: Буфер для засыкаемого времени
-				#define CHAREDIT_TIME 4000 													//sps: время задержки последнего нажатия
-
-//-----------------------------------------------------------------------------------------------
-
 				//sps: Проверяем что все создалось правильно
 				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
 
@@ -1027,7 +1051,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								}else{
 									if(indexch<5){indexch++;}else{indexch = 0;}				//sps: Зацикливаем перебор символов
 								}
-								ChangeCHAR(msg,mcx,mcy,scx,scy,hexchar[indexch]);			//sps: Выводим текущий выбранный символ
+							//	ChangeCHAR(msg,mcx,mcy,scx,scy,hexchar[indexch]);			//sps: Выводим текущий выбранный символ
+								ChangeCHAR(msg,mcx,mcy,scx,scy,'X');
 								timerch = systemGetTimer(); 								//sps: засекаем
 
 							} else {
@@ -1201,8 +1226,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
-					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
-				//	rkey = HexEdit(window);									//sps: Открываем HEX-редактор
+				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
 
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
