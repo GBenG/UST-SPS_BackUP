@@ -397,10 +397,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		}
 //-----------------------------------------------------------------------------------------------
 
-		bool 	chractive=true;														//sps: Активность ввода буквенных символов в HEX
 		char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
 		int 	indexch;															//sps: Индекс символа в массиве
-		UINT	timerch;															//sps: Буфер для засыкаемого времени
 		#define CHAREDIT_TIME 400 													//sps: время задержки последнего нажатия
 
 //-----------------------------------------------------------------------------------------------
@@ -493,38 +491,31 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			void ChangeCHAR(char* msg, int mcx, int mcy, int scx, int scy, char key)
 			{
-			//	char* hidhex=UNS_MALLOC(2+1);
 				char 	hidhex[3];
 				int		icursor;			 									//sps: Вычесляем позицию курсора в буфере для замены симола
 				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 
-
 				icursor = (point+mcy*hstrsz+mcx/2)-1;							//sps: Вычесляем позицию курсора в буфере для замены симола
 				hcursor = (LCD_CLIENT_WIDTH*mcy+mcx)-1;
 
-			//	msg[hcursor+1]=hexchar[3];
-				for(indexch=0;indexch<=5;indexch++){
+				for(indexch=0;indexch<=5;indexch++){							//sps: Вычесляем индекс буквы или цифру на текущей позиции курсора
 					if (hexchar[indexch]==msg[hcursor+1])break;
 				}
-				DBGF("Symbol = %c",msg[hcursor+1])
-				DBGF("Symbol index = %d",indexch)
 
-				if(key=='X')
+				if(key=='X')													//sps: Если запрос на ввод буквы
 				{
-					if(indexch<=5){
-						if(indexch==5){
+					if(indexch<=5){												//sps: И в текущей позиции была буква
+						if(indexch==5){											//sps: Циклически подставляем следующую букву
 							msg[hcursor+1]=hexchar[0];
 						}else{
 							msg[hcursor+1]=hexchar[indexch+1];
 						}
-					}else{
-						msg[hcursor+1]=hexchar[0];								//sps: Заменяем символ
+					}else{														//sps: Или поставляем первую "А" если там была цифра
+						msg[hcursor+1]=hexchar[0];
 					}
 				}else{
-					msg[hcursor+1]=key;											//sps: Заменяем символ
+					msg[hcursor+1]=key;											//sps: Заменяем символ цифрой
 				}
-
-
 
 				if(((mcy*hstrsz*2+mcx)-1)&1){									//sps: Определяем на какой части хекс-представления символа находится курсор
 					sprintf(hidhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);		//sps: Забираем два нужных символа при нечетином курсоре
@@ -532,14 +523,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					sprintf(hidhex,"%c%c",msg[hcursor],msg[hcursor+1]);			//sps: Забираем два нужных символа при четином курсоре
 				}
 
-		//		msg[LCD_CLIENT_WIDTH*scy+scx] = strtol(hidhex, NULL, 16);		//sps: Получаем его CHAR-представление
-
 				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: Записываем новый символ в буфер
 
 				need_reconstruct=true;											//sps: Перестраеваем окно
 				chestat=true;													//sps: Буфер редактировался
-
-		//		UNS_FREE(hidhex);
 			}
 //================================================================================================
 // SPS :: Функция перелистывания НЕХ-страниц вверх
@@ -987,16 +974,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-					if (!chractive) {														//sps: Если символ редактируется, засечем время последнего нажатия
-						if (systemGetTimer()>timerch+CHAREDIT_TIME)
-						{
-							indexch = 0;
-							chractive=true;
-						}
-					}
-
-//-----------------------------------------------------------------------------------------------
-
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 						if (key != KEY_NONE)
 						{
@@ -1043,17 +1020,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							} else if (key == KEY_7) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'7');
 							} else if (key == KEY_8) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'8');
 							} else if (key == KEY_9) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'9');
-							} else if (key == KEY_00){
-
-								if (chractive) {											//sps: Если символ только начали набирать
-									indexch = 0;											//sps: Сбросим индекс буквы на первый элемент массива
-									chractive=false;										//sps: Установим статус "символ вводится"
-								}else{
-									if(indexch<5){indexch++;}else{indexch = 0;}				//sps: Зацикливаем перебор символов
-								}
-							//	ChangeCHAR(msg,mcx,mcy,scx,scy,hexchar[indexch]);			//sps: Выводим текущий выбранный символ
-								ChangeCHAR(msg,mcx,mcy,scx,scy,'X');
-								timerch = systemGetTimer(); 								//sps: засекаем
+							} else if (key == KEY_00){	ChangeCHAR(msg,mcx,mcy,scx,scy,'X');
 
 							} else {
 								beepError();
