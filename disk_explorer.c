@@ -614,8 +614,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
 				}
-						sprintf(offset,"OFFSET:%08X",offs+point);					//sps: получаем OFFSET первой строки в шестнадцтеричном формате
-						asblok[scrsize+1]=0;										//sps: нуль-терменируем последнюю строку
+					asblok[scrsize+1]=0;										//sps: нуль-терменируем последнюю строку
 			}
 //================================================================================================
 // SPS :: Печать окна НЕХ-просмотрщика/редактора
@@ -692,6 +691,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				{
 					sScreen* screen = &window->screen;
 
+					/////////////////////////////////////////////// ФОРМИРУЕМ ВЕРХНЮЮ СТРОКУ СМЕЩЕНИЯ ///////////////////////////////////////////////////
+
+					sprintf(offset,"OFFSET:%08X",offs+point);						//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+
+					/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ /////////////////////////////////////////////////////////////
+
 					MUTEX_LOCK(window->mutex)										//sps: зажали мютекс окна
 
 						Screen_Clear(screen);
@@ -700,7 +705,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						Screen_PutString(screen,offset,true);
 						Screen_PutString(screen,msg,false);
 
-						MUTEX_UNLOCK(window->mutex)									//sps: отдали мютекс окна
+					MUTEX_UNLOCK(window->mutex)										//sps: отдали мютекс окна
+
 						need_redraw=false;											//sps: закрыли иф, пока кнопку не ткнут
 				}
 
@@ -872,6 +878,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				for (;;)
 				{
 						if(need_reconstruct){
+							DBGF("mcx = %d mcy = %d",mcx, mcy)
 							HexReconstruct();													//sps: Конструируем окно
 							need_reconstruct=false;
 						}
@@ -942,10 +949,18 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
 						scy=mcy;
-						scx=spcount1+hstrsz*2+spcount2+mcx/2;
-						slcurs=LCD_CLIENT_WIDTH*scy+scx;									//sps: Вычесляем позицию вторичного курсора по координатам
+						scx=mcx/2;
+						slcurs=LCD_CLIENT_WIDTH*scy+(scx+spcount1+hstrsz*2+spcount2);		//sps: Вычесляем позицию вторичного курсора по координатам
 
-						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ ///////////////////////////////////////////////
+						/////////////////////////////////////////////// ФОРМИРУЕМ ВЕРХНЮЮ СТРОКУ СМЕЩЕНИЯ ///////////////////////////////////////////////////
+
+					//	DBG("----------------------------------------")
+					//	DBGF("x => %d y => %d", scx,scy)
+					//	DBGF("offs => %d point => %d", offs,point)
+
+						sprintf(offset,"OFFSET:%08X",offs+point+(scx+(scy*hstrsz))-1);		//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+
+						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ /////////////////////////////////////////////////////////////
 
 						sScreen* screen = &window->screen;
 
@@ -1026,8 +1041,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								beepError();
 							}
 							need_redraw=true;
-							//DBGF("x => %d y => %d", shad_cx,shad_cy)
-							//DBGF("offs => %d point => %d", offs,point)
+						//	DBGF("x => %d y => %d", shad_cx,shad_cy)
+						//	DBGF("offs => %d point => %d", offs,point)
 							continue;
 						}
 //-----------------------------------------------------------------------------------------------
