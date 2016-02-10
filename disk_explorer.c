@@ -338,32 +338,31 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
-		int    			cursor=0;				//sps: Позиция на которой сейчас основной курсор
-		int    			slcurs=0;				//sps: Позиция на которой сейчас вторичный курсор
 		int    			size=fno->fsize;		//sps: Размер открываемого файла
 
 //-----------------------------------------------------------------------------------------------
 
-		#define hsize 512													//sps:	Размер половины буфера
-		#define wsize hsize*2												//sps:	Размер буфера
+		#define hsize 512															//sps:	Размер половины буфера
+		#define wsize hsize*2														//sps:	Размер буфера
 
-		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT					//sps:	Кол-во символов на экране в TXT
-		#define hscrsze 4*(LCD_CLIENT_HEIGHT-1)								//sps:	Кол-во символов на экране в HEX
-		#define tstrsz	LCD_CLIENT_WIDTH									//sps:	Кол-во обрабатываемых символов в строке TXT
-		#define hstrsz 	4													//sps:	Кол-во обрабатываемых символов в строке HEX
+		#define hstrsz 	4															//sps:	Кол-во обрабатываемых символов в строке HEX
+		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT							//sps:	Кол-во символов на экране в TXT
+		#define hscrsze hstrsz*(LCD_CLIENT_HEIGHT-1)								//sps:	Кол-во символов на экране в HEX
+		#define tstrsz	LCD_CLIENT_WIDTH											//sps:	Кол-во обрабатываемых символов в строке TXT
+		#define slnum 	1															//sps:	Кол-во имволов для отображения смещения адреса
 
-		#define spcount2  (LCD_CLIENT_WIDTH-13)/2							//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
-		#define spcount1  (LCD_CLIENT_WIDTH-13)-spcount2
-		#define hex_Lmarg (spcount1+1)										//sps: Ширина левого отступа в НЕХ-просмотре
-		#define hex_Rmarg (spcount2+1)										//sps: Ширина правого отступа в НЕХ-просмотре
+		#define spcount2  (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))/2				//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+		#define spcount1  (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))-spcount2
+		#define hex_Lmarg (spcount1+slnum)											//sps: Ширина левого отступа в НЕХ-просмотре
+		#define hex_Rmarg (spcount2)												//sps: Ширина правого отступа в НЕХ-просмотре
 
 //-----------------------------------------------------------------------------------------------
-
-		char* 	wbuf=UNS_MALLOC(wsize+1);		//sps:	Буфера
 
 		unsigned int len;						//sps:	Возврат прочитанных байт
 		unsigned int offs=0;					//sps:	Смещение буфера по файлу
 		unsigned int grab;						//sps:	Кол-во загружаеммых в буфер байт
+
+		char* 		 wbuf=UNS_MALLOC(wsize+1);	//sps:	Буфер
 
 		bool		 chestat=false;				//sps: 	Было ли редактирование?
 		bool 		 need_redraw;				//sps: 	Пнуть в ТРУ если нужно перисовать окошко при перемещении курсора
@@ -371,9 +370,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		char*  	offset=UNS_MALLOC(tstrsz+1);										//sps: Смещение номера считанного байта файла в НЕХ
-		char*  	hexstr=UNS_MALLOC(tstrsz+1);										//sps: Сформированная строка на вывод в окно
-		char*  	msg=UNS_MALLOC(scrsize+20);											//sps: Сформированное сообщение для вывода на экран
+		char*  	offset=UNS_MALLOC(tstrsz);											//sps: Смещение номера считанного байта файла в НЕХ
+		char*  	hexstr=UNS_MALLOC(tstrsz);											//sps: Сформированная строка на вывод в окно
+		char*  	msg=UNS_MALLOC(scrsize);											//sps: Сформированное сообщение для вывода на экран
 
 		char*  	hxblok=UNS_MALLOC(hstrsz*2+1);										//sps: Блок шестнадцтеричных значений считанных байт
 		char*  	asblok=UNS_MALLOC(hstrsz+1);										//sps: Блок ASCII значений считанных байт
@@ -544,7 +543,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			{
 				memset(offset,0,tstrsz+1);											//sps: Чистим фсе
 				memset(hexstr,0,tstrsz+1);
-				memset(msg,0,scrsize+20);
+				memset(msg,0,scrsize);
 
 				char*	pmsg=msg;													//sps: Создаем указатель для склеивания всех блоков в страницу
 
@@ -552,8 +551,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
 				{
 
-					memset(hxblok,0,hstrsz*2+1);									//sps: Чистим фсе
-					memset(asblok,0,hstrsz+1);
+					memset(hxblok,0,hstrsz*2);									//sps: Чистим фсе
+					memset(asblok,0,hstrsz);
 
 					for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
 					{
@@ -586,7 +585,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
 				}
-					asblok[scrsize+1]=0;										//sps: нуль-терменируем последнюю строку
+				//	asblok[scrsize+1]=0;										//sps: нуль-терменируем последнюю строку
 			}
 //================================================================================================
 // SPS :: Печать окна НЕХ-просмотрщика/редактора
@@ -608,8 +607,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
 				{
 
-					memset(hxblok,0,hstrsz*2+1);									//sps: Чистим фсе
-					memset(asblok,0,hstrsz+1);
+					memset(hxblok,0,hstrsz*2);									//sps: Чистим фсе
+					memset(asblok,0,hstrsz);
 
 					for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
 					{
@@ -729,7 +728,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						need_reconstruct=true;												//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
 
 //-----------------------------------------------------------------------------------------------
-
+				int    	cursor=0;															//sps: Позиция на которой сейчас основной курсор
+				int    	slcurs=0;															//sps: Позиция на которой сейчас вторичный курсор
 				int		mcx=hex_Lmarg, mcy=0;												//sps: Координаты основного указателя
 				int		shad_cx=mcx, shad_cy=mcy;											//sps: Теневые координаты для предпроверки граничных условий
 				int		scx=0, scy=0;														//sps: Координаты вторичного указателя
@@ -1026,8 +1026,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
-					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
-				//	rkey = HexEdit(window);									//sps: Открываем HEX-редактор
+				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
 
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
