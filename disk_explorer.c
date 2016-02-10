@@ -572,7 +572,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 // SPS :: Перестройка окна НЕХ-просмотрщика/редактора
 //================================================================================================
-			void HexReconstruct()													//sps: если что-то поменялось - перерисовываем окно
+			void HexReconstruct(bool offslide)										//sps: если что-то поменялось - перерисовываем окно
 			{
 				memset(offset,0,tstrsz+1);											//sps: Чистим фсе
 				memset(hexstr,0,tstrsz+1);
@@ -606,10 +606,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 					}
 
-					sprintf(offset,"OFFSET:%08X",offs+j);							//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам
+					if (offslide){
+						sprintf(offset,"%08X",offs+j);						//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам (скользящее)
+					}else{
+						sprintf(offset,"%08X",j-point);						//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам (неподвижное)
+					}
 
 					//sps: Клеем симпатичную строчку, а она ломается)
-					sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
+					sprintf(hexstr,"%c%s%s%s%s",offset[7],space1,hxblok,space2,asblok);
 
 					pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
 
@@ -666,7 +670,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 				printMessage(hpmsg);
 				UNS_FREE(hpmsg);
-				HexReconstruct();													//sps: Обновляем окно TODO уйти от общих для нескольких подфункций переменных
+				HexReconstruct(false);												//sps: Обновляем окно TODO уйти от общих для нескольких подфункций переменных
 			}
 //================================================================================================
 // SPS :: HЕХ-просмотрщик
@@ -681,7 +685,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			for (;;)
 			{
 				if(need_reconstruct){
-					HexReconstruct();												//sps: Конструируем окно
+					HexReconstruct(false);											//sps: Конструируем окно
 					need_reconstruct=false;
 				}
 
@@ -717,12 +721,12 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 					{
 						HexScreenUp();												//sps: Листаем вверх
-						HexReconstruct();											//sps: Конструируем окно
+						HexReconstruct(false);										//sps: Конструируем окно
 					}
 						else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 					{
 						HexScreenDown();											//sps: Листаем вниз
-						HexReconstruct();											//sps: Конструируем окно
+						HexReconstruct(false);										//sps: Конструируем окно
 					}
 						else if (key == KEY_RSOFT)									//sps: Уходим отсюда
 					{
@@ -879,7 +883,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				{
 						if(need_reconstruct){
 							DBGF("mcx = %d mcy = %d",mcx, mcy)
-							HexReconstruct();													//sps: Конструируем окно
+							HexReconstruct(true);												//sps: Конструируем окно
 							need_reconstruct=false;
 						}
 
@@ -919,14 +923,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								shad_cy=0;
 								mcy=shad_cy;
 								HexScreenUp();													//sps: Листаем вверх
-								HexReconstruct();												//sps: Конструируем окно
+								HexReconstruct(true);											//sps: Конструируем окно
 							}else{mcy=shad_cy;}
 							//--------------------------------------
 							if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
 								shad_cy=LCD_CLIENT_HEIGHT-2;
 								mcy=shad_cy;
 								HexScreenDown();												//sps: Листаем вниз
-								HexReconstruct();												//sps: Конструируем окно
+								HexReconstruct(true);											//sps: Конструируем окно
 							}else{mcy=shad_cy;}
 							//--------------------------------------
 						}else{
@@ -936,7 +940,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								shad_cy=mcy;
 							}else{																//sps: Если нет ->
 								HexScreenDown();												//sps: Листаем вниз
-								HexReconstruct();												//sps: Конструируем окно
+								HexReconstruct(true);											//sps: Конструируем окно
 																								//sps: Устанавливаем курсор на последний символ
 								shad_cx=((((fno->fsize)-offs-point)*2)-hstrsz*2*(LCD_CLIENT_HEIGHT-2))+1;
 								shad_cy=LCD_CLIENT_HEIGHT-2;
@@ -953,10 +957,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						slcurs=LCD_CLIENT_WIDTH*scy+(scx+spcount1+hstrsz*2+spcount2);		//sps: Вычесляем позицию вторичного курсора по координатам
 
 						/////////////////////////////////////////////// ФОРМИРУЕМ ВЕРХНЮЮ СТРОКУ СМЕЩЕНИЯ ///////////////////////////////////////////////////
-
-					//	DBG("----------------------------------------")
-					//	DBGF("x => %d y => %d", scx,scy)
-					//	DBGF("offs => %d point => %d", offs,point)
 
 						sprintf(offset,"OFFSET:%08X",offs+point+(scx+(scy*hstrsz))-1);		//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 
@@ -1208,8 +1208,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
 
-				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
-					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
+					rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
+				//	rkey = HexEdit(window);									//sps: Открываем HEX-редактор
 
 					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
 
