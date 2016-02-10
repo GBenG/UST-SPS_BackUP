@@ -228,7 +228,6 @@ static void renameFile(FILINFO* fno, char* megapath,char* new_path){
 			FRESULT rres=f_rename(new_path,ren_path);							//sps: Переименовываем файл, возвращаем результат операции
 			if(rres!=FR_OK)
 			{
-				DBGF("RESULT - %d ",rres)
 				if(rres==FR_EXIST)												//sps: Файл с таким именем уже существует(
 				{LCDUI_Supervisor_Toast(LANG_DISKEXP_FEXIST,1500);}
 				if(rres==FR_INVALID_NAME || rres==FR_INVALID_OBJECT)
@@ -262,7 +261,6 @@ static void duplicFile(FILINFO* fno, char* megapath, char* short_name)
     	{
     		if((strlen(short_name)-i-1)<2)										//sps: Добаваляем последний символ имени дубликата "_"
 			{sprintf(short_name,"%s_",short_name);
-			DBGF("%s",short_name);
 			}
     	}
     }
@@ -309,8 +307,7 @@ static void duplicFile(FILINFO* fno, char* megapath, char* short_name)
 		FILINFO dufno;
 		f_stat(dup_path,&dufno);												//sps: Проверим параметры файла-огрызка
 		LCDUI_Supervisor_Toast(LANG_DISKEXP_COPSTOP,1500);						//sps: "Операция дублирования ОМЕНА!"
-		DBGF("Size of FILE = %d",fno->fsize);
-		DBGF("Size of STUB = %d",dufno);
+
 		if(dufno.fsize != fno->fsize){											//sps: Если размер прерванной копии не равен иходнику - сотрем огрызок
 			DBG("Broken file is deleted [->X]");
 			FRESULT delres=f_unlink(dup_path);
@@ -332,7 +329,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			return false;
 		}
 		#endif
-		if(fno->fattrib & AM_DIR)		//sps: Запрещаем открытие папок через просмотрщик / редактор TODO Разобратся со стремным параметром "0x30"
+		if(fno->fattrib & AM_DIR)		//sps: Запрещаем открытие папок через просмотрщик / редактор
 			{
 				beepError();
 				return false;
@@ -412,37 +409,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер
 			{
 					FIL 	fil;
-					DBG("ReGrab");
 
 //----------------------------------------------------------------- HALF-BUFF
-	/*					if(rewrite==1) {
-
-						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
-
-						if(fres==FR_OK)
-						{
-							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
-							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
-							chestat=false;										//sps:  Изменения в буфере сохранены
-						}
-						f_close(&fil);											//sps:	Закрываем файл
-					}
-
-					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
-
-					if(fres==FR_OK)
-					{
-						if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF
-
-						memset(wbuf,0,wsize);									//sps:	Чистим буфер
-
-						f_lseek(&fil, offs);									//sps:	Сдвигаем позицию считывания
-
-						fres=f_read(&fil,wbuf,grab,&len);						//sps:	Читаем из файла
-						//sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
-						wbuf[grab]=0;
-					}*/
-//----------------------------------------------------------------- FULL-BUFF
 
 		 	 	 	if(rewrite==1) {
 
@@ -777,7 +745,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				for (;;)
 				{
 						if(need_reconstruct){
-							DBGF("mcx = %d mcy = %d",mcx, mcy)
 							HexReconstruct(true);												//sps: Конструируем окно
 							need_reconstruct=false;
 						}
@@ -789,9 +756,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;						//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
 						if ((fpoint+hstrsz)<hstrsz){fpoint=0;}								//sps: Работа с первой строкой
-
-					//	DBGF("fpoint => %d",fpoint)
-					//	DBGF("offs => %d point => %d", offs,point)
 
 						if(fpoint<=(fno->fsize)-1){
 
@@ -936,8 +900,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								beepError();
 							}
 							need_redraw=true;
-						//	DBGF("x => %d y => %d", shad_cx,shad_cy)
-						//	DBGF("offs => %d point => %d", offs,point)
 							continue;
 						}
 //-----------------------------------------------------------------------------------------------
@@ -998,8 +960,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								point-=tstrsz;
 							}
 
-						//	DBGF("point = %d %d",point,offs+point);
-
 							if (offs+point<=offs && offs!=0)
 							{
 								point+=hsize;
@@ -1010,7 +970,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+scrsize < size)
 						{
 							point+=tstrsz;
-					//		DBGF("point = %d %d",point,offs+point);
 
 							if (offs+point+scrsize>=offs+wsize)
 							{

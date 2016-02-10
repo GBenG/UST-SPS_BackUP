@@ -1,0 +1,80 @@
+//================================================================================================
+// SPS :: Функция загрузки и обработки скользящего буфера
+//================================================================================================
+			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер
+			{
+					FIL 	fil;
+
+//----------------------------------------------------------------- FULL-BUFF
+	/*					if(rewrite==1) {
+
+						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
+
+						if(fres==FR_OK)
+						{
+							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
+							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
+							chestat=false;										//sps:  Изменения в буфере сохранены
+						}
+						f_close(&fil);											//sps:	Закрываем файл
+					}
+
+					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
+
+					if(fres==FR_OK)
+					{
+						if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва считываемых байт, чтобы не влезть за EOF
+
+						memset(wbuf,0,wsize);									//sps:	Чистим буфер
+
+						f_lseek(&fil, offs);									//sps:	Сдвигаем позицию считывания
+
+						fres=f_read(&fil,wbuf,grab,&len);						//sps:	Читаем из файла
+						//sprintf(wbuf,"%s\0",wbuf);							//sps:	Затыкаем строку в буфере
+						wbuf[grab]=0;
+					}*/
+//----------------------------------------------------------------- HALF-BUFF
+
+		 	 	 	if(rewrite==1) {
+
+						FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
+
+						if(fres==FR_OK)
+						{
+							if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва байт
+
+							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
+							f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
+							chestat=false;										//sps:  Изменения в буфере сохранены
+						}
+						f_close(&fil);											//sps:	Закрываем файл
+					}
+
+					FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
+
+		  			if(fres==FR_OK)
+					{
+						memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
+
+							if(offs!=0){
+								grab=hsize;
+								f_lseek(&fil, offs+hsize);						//sps:	Сдвигаем позицию считывания
+							}else{
+								grab=wsize;
+								f_lseek(&fil, offs);							//sps:	Сдвигаем позицию считывания
+							}
+
+						memset(wbuf+hsize,0,hsize);								//sps: Чистим вторые пол буфера т.к. заполним его не полностью
+
+						if(offs!=0){
+							fres=f_read(&fil,wbuf+hsize,grab,&len);				//sps:	Читаем из файла пол буфера
+						}else{
+							fres=f_read(&fil,wbuf,grab,&len);					//sps:	Читаем из файла целый буфер
+						}
+
+						wbuf[offs+grab]=0;										//sps:	Затыкаем строку в буфере
+					}
+
+						f_close(&fil);											//sps:	Закрываем файл
+			}
+//================================================================================================
