@@ -334,7 +334,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				beepError();
 				return false;
 			}
-		//if ((fno->fattrib & AM_LFN) == AM_LFN)
+		//if ((fno->fattrib & AM_LFN) == AM_LFN) TODO Это пример, если не нужен - удалить
 //-----------------------------------------------------------------------------------------------
 
 		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст
@@ -376,26 +376,32 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 		char*  	hxblok=UNS_MALLOC(hstrsz*2+1);										//sps: Блок шестнадцтеричных значений считанных байт
 		char*  	asblok=UNS_MALLOC(hstrsz+1);										//sps: Блок ASCII значений считанных байт
-		char*  	twohex=UNS_MALLOC(2);												//sps: Бфер для двухсимольного значения байта в НЕХ-е
+		char 	twohex[2];															//sps: Бфер для двухсимольного значения байта в НЕХ-е
 
 //-----------------------------------------------------------------------------------------------
 
+	//	char 	space1[10];
+	//	char 	space2[10];
 		char*  	space1=UNS_MALLOC(hex_Lmarg);										//sps: Выделяем место под пробелы первого столбца
 		char*  	space2=UNS_MALLOC(hex_Rmarg);										//sps: Выделяем место под пробелы второго столбца
 
-		memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
-		memset(space2,0,hex_Rmarg);
+//		memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
+//		memset(space2,0,hex_Rmarg);
 
 		for(int i=0;i<spcount1;i++)
 		{
 			if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
 			if(spcount2-i > 0)space2[i] = ' ';
 		}
+/*		for(int i=0;i==10;i++)
+		{
+			space1[i] = ' ';														//sps: Набиваем пробелы для первого и второго столбца
+			space2[i] = ' ';
+		}*/
 //-----------------------------------------------------------------------------------------------
 
 		char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
 		int 	indexch;															//sps: Индекс символа в массиве
-		#define CHAREDIT_TIME 400 													//sps: время задержки последнего нажатия
 
 //-----------------------------------------------------------------------------------------------
 
@@ -449,6 +455,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 
 						wbuf[offs+grab]=0;										//sps:	Затыкаем строку в буфере
+						DBGF("offs+grab = %d",offs+grab)
 					}
 
 						f_close(&fil);											//sps:	Закрываем файл
@@ -583,9 +590,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					sprintf(hexstr,"%c%s%s%s%s",offset[7],space1,hxblok,space2,asblok);
 
 					pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
-
 				}
-				//	asblok[scrsize+1]=0;										//sps: нуль-терменируем последнюю строку
 			}
 //================================================================================================
 // SPS :: Печать окна НЕХ-просмотрщика/редактора
@@ -733,7 +738,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				int		mcx=hex_Lmarg, mcy=0;												//sps: Координаты основного указателя
 				int		shad_cx=mcx, shad_cy=mcy;											//sps: Теневые координаты для предпроверки граничных условий
 				int		scx=0, scy=0;														//sps: Координаты вторичного указателя
-				UINT	fpoint;																//sps: Положение HEX-курсора в файле
+				UINT	fpoint;																//sps: Положение HEX-курсора в файле (для редактирования)
 
 //-----------------------------------------------------------------------------------------------
 
@@ -1037,7 +1042,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			}
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
-		UNS_FREE(twohex);
 		UNS_FREE(hexstr);
 		UNS_FREE(msg);
 		UNS_FREE(offset);
