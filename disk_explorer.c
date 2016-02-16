@@ -380,24 +380,23 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-	//	char 	space1[10];
-	//	char 	space2[10];
-		char*  	space1=UNS_MALLOC(hex_Lmarg);										//sps: Выделяем место под пробелы первого столбца
-		char*  	space2=UNS_MALLOC(hex_Rmarg);										//sps: Выделяем место под пробелы второго столбца
+		char 	space1[2] = {0x9E,0};
+		char 	space2[2] = {0x9E,0};
+//		char*  	space1=UNS_MALLOC(hex_Lmarg);										//sps: Выделяем место под пробелы первого столбца
+//		char*  	space2=UNS_MALLOC(hex_Rmarg);										//sps: Выделяем место под пробелы второго столбца
 
 //		memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
 //		memset(space2,0,hex_Rmarg);
 
-		for(int i=0;i<spcount1;i++)
+/*		for(int i=0;i<spcount1;i++)
 		{
 			if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
 			if(spcount2-i > 0)space2[i] = ' ';
-		}
-/*		for(int i=0;i==10;i++)
-		{
-			space1[i] = ' ';														//sps: Набиваем пробелы для первого и второго столбца
-			space2[i] = ' ';
 		}*/
+//		for(int i=0;i==10;i++)
+//		{
+//			space1[i] = ' ';														//sps: Набиваем пробелы для первого и второго столбца
+//		}
 //-----------------------------------------------------------------------------------------------
 
 		char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
@@ -406,7 +405,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 		//sps: Проверяем что все создалось правильно
-		if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return false;
+		if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL/* || space1==NULL */|| space2==NULL) return false;
 
 //================================================================================================
 // SPS :: Функция загрузки и обработки скользящего буфера
@@ -1047,8 +1046,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		UNS_FREE(offset);
 		UNS_FREE(hxblok);
 		UNS_FREE(asblok);
-		UNS_FREE(space1);
-		UNS_FREE(space2);
+	//	UNS_FREE(space1);
+	//	UNS_FREE(space2);
 		UNS_FREE(wbuf);
 		return true;
 }
