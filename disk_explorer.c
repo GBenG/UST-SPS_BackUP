@@ -351,8 +351,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		#define tstrsz	LCD_CLIENT_WIDTH											//sps:	Кол-во обрабатываемых символов в строке TXT
 		#define slnum 	1															//sps:	Кол-во имволов для отображения смещения адреса
 
-		#define spcount2  (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))/2				//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
-		#define spcount1  (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))-spcount2
+		#define spcount2 (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))/2				//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+		#define spcount1 (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))-spcount2
 		#define hex_Lmarg (spcount1+slnum)											//sps: Ширина левого отступа в НЕХ-просмотре
 		#define hex_Rmarg (spcount2)												//sps: Ширина правого отступа в НЕХ-просмотре
 
@@ -380,8 +380,26 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		char 	space1[2] = {0x9E,0};
-		char 	space2[2] = {0x9E,0};
+//		char 	space1[spcount1+1] = {0x9E,0};
+//		char 	space2[spcount2+1] = {0x9E,0};
+
+		char 	space1[spcount1+1];
+		char 	space2[spcount2+1];
+
+		for(int i=0;i<spcount1;i++)
+				{
+					if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
+					if(spcount2-i > 0)space2[i] = ' ';
+				}
+		space1[spcount1+1]=0;
+		space2[spcount2+1]=0;
+
+//		for(int i=0;i<5;i++)
+//				{
+//					DBGF("sp1=%d, sp2=%d",space1[i],space2[i]);
+//				}
+
+
 //		char*  	space1=UNS_MALLOC(hex_Lmarg);										//sps: Выделяем место под пробелы первого столбца
 //		char*  	space2=UNS_MALLOC(hex_Rmarg);										//sps: Выделяем место под пробелы второго столбца
 
