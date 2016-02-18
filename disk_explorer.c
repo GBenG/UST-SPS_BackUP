@@ -393,11 +393,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
-		int 	indexch;															//sps: Индекс символа в массиве
-
-//-----------------------------------------------------------------------------------------------
-
 		//sps: Проверяем что все создалось правильно
 		if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL/* || space1==NULL */|| space2==NULL) return false;
 
@@ -458,9 +453,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			void ChangeCHAR(char* msg, int mcx, int mcy, int scx, int scy, char key)
 			{
-				char 	hidhex[3];
+				char 	hidhex[2];			 									//sps: Буфер для обратного конвертирования НЕХ представления символа из двух символов в один символ ASCII
 				int		icursor;			 									//sps: Вычесляем позицию курсора в буфере для замены симола
 				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
+				int 	indexch;												//sps: Индекс символа в массиве
+				char 	hexchar[6] = {'A','B','C','D','E','F'};					//sps: Набор символов для воода в HEX
 
 				icursor = (point+mcy*hstrsz+mcx/2)-1;							//sps: Вычесляем позицию курсора в буфере для замены симола
 				hcursor = (LCD_CLIENT_WIDTH*mcy+mcx)-1;
