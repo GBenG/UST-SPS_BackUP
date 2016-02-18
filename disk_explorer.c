@@ -358,63 +358,39 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 
-		unsigned int len;						//sps:	Возврат прочитанных байт
-		unsigned int offs=0;					//sps:	Смещение буфера по файлу
-		unsigned int grab;						//sps:	Кол-во загружаеммых в буфер байт
+		unsigned int len;															//sps:	Возврат прочитанных байт
+		unsigned int offs=0;														//sps:	Смещение буфера по файлу
+		unsigned int grab;															//sps:	Кол-во загружаеммых в буфер байт
 
-		char* 		 wbuf=UNS_MALLOC(wsize+1);	//sps:	Буфер
+		char* 		 wbuf=UNS_MALLOC(wsize+1);										//sps:	Буфер
 
-		bool		 chestat=false;				//sps: 	Было ли редактирование?
-		bool 		 need_redraw;				//sps: 	Пнуть в ТРУ если нужно перисовать окошко при перемещении курсора
-		bool 		 need_reconstruct;			//sps: 	Пнуть в ТРУ если нужно перисовать окошко новой инфой
-
-//-----------------------------------------------------------------------------------------------
-
-		char*  	offset=UNS_MALLOC(tstrsz);											//sps: Смещение номера считанного байта файла в НЕХ
-		char*  	hexstr=UNS_MALLOC(tstrsz);											//sps: Сформированная строка на вывод в окно
-		char*  	msg=UNS_MALLOC(scrsize);											//sps: Сформированное сообщение для вывода на экран
-
-		char*  	hxblok=UNS_MALLOC(hstrsz*2+1);										//sps: Блок шестнадцтеричных значений считанных байт
-		char*  	asblok=UNS_MALLOC(hstrsz+1);										//sps: Блок ASCII значений считанных байт
-		char 	twohex[2];															//sps: Бфер для двухсимольного значения байта в НЕХ-е
+		bool		 chestat=false;													//sps: 	Было ли редактирование?
+		bool 		 need_redraw;													//sps: 	Пнуть в ТРУ если нужно перисовать окошко при перемещении курсора
+		bool 		 need_reconstruct;												//sps: 	Пнуть в ТРУ если нужно перисовать окошко новой инфой
 
 //-----------------------------------------------------------------------------------------------
 
-//		char 	space1[spcount1+1] = {0x9E,0};
-//		char 	space2[spcount2+1] = {0x9E,0};
+		char*  		offset=UNS_MALLOC(tstrsz);										//sps: Смещение номера считанного байта файла в НЕХ
+		char*  		hexstr=UNS_MALLOC(tstrsz);										//sps: Сформированная строка на вывод в окно
+		char*  		msg=UNS_MALLOC(scrsize);										//sps: Сформированное сообщение для вывода на экран
 
-		char 	space1[spcount1+1];
-		char 	space2[spcount2+1];
+		char*  		hxblok=UNS_MALLOC(hstrsz*2+1);									//sps: Блок шестнадцтеричных значений считанных байт
+		char*  		asblok=UNS_MALLOC(hstrsz+1);									//sps: Блок ASCII значений считанных байт
+		char 		twohex[2];														//sps: Бфер для двухсимольного значения байта в НЕХ-е
 
-		for(int i=0;i<spcount1;i++)
+//-----------------------------------------------------------------------------------------------
+
+		char 		space1[spcount1+1];
+		char 		space2[spcount2+1];
+
+		for(int i=0;i<spcount1;i++)													//sps: Набиваем пробелы для первого и второго столбца
 				{
-					if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
+					if(spcount1-i > 0)space1[i] = ' ';
 					if(spcount2-i > 0)space2[i] = ' ';
 				}
-		space1[spcount1+1]=0;
-		space2[spcount2+1]=0;
+		space1[spcount1]=0;
+		space2[spcount2]=0;
 
-//		for(int i=0;i<5;i++)
-//				{
-//					DBGF("sp1=%d, sp2=%d",space1[i],space2[i]);
-//				}
-
-
-//		char*  	space1=UNS_MALLOC(hex_Lmarg);										//sps: Выделяем место под пробелы первого столбца
-//		char*  	space2=UNS_MALLOC(hex_Rmarg);										//sps: Выделяем место под пробелы второго столбца
-
-//		memset(space1,0,hex_Lmarg);													//sps: Чистим фсе
-//		memset(space2,0,hex_Rmarg);
-
-/*		for(int i=0;i<spcount1;i++)
-		{
-			if(spcount1-i > 0)space1[i] = ' ';										//sps: Набиваем пробелы для первого и второго столбца
-			if(spcount2-i > 0)space2[i] = ' ';
-		}*/
-//		for(int i=0;i==10;i++)
-//		{
-//			space1[i] = ' ';														//sps: Набиваем пробелы для первого и второго столбца
-//		}
 //-----------------------------------------------------------------------------------------------
 
 		char 	hexchar[6] = {'A','B','C','D','E','F'};								//sps: Набор символов для воода в HEX
@@ -1064,8 +1040,6 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		UNS_FREE(offset);
 		UNS_FREE(hxblok);
 		UNS_FREE(asblok);
-	//	UNS_FREE(space1);
-	//	UNS_FREE(space2);
 		UNS_FREE(wbuf);
 		return true;
 }
