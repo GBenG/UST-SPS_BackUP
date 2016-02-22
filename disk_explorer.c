@@ -1169,6 +1169,17 @@ static void diskExplorer(){
 						retval=DYNMENU_KEYHANDLER_SHOULD_CANCEL;		// Чтобы убрать зависшее в памяти окна старое имя файла
 					}
 //--------------------------------------------------------------------------------------------------------------------------
+					else if(key==KEY_5)									//sps: ЭКСПЕРЕМЕНТ
+					{
+						sDynMenu* menu = DynMenuCreateWithCapacity("[DYN MENU]", 3);
+						DynMenuAddItem(menu,"Пункт 1");
+						DynMenuAddItem(menu,"Punkt 2");
+						DynMenuAddItem(menu,LANG_DISKEXP_PERMISSION);
+						DynMenuSetCursor(menu,1);
+						DynMenuShow(menu);
+						DynMenuDelete(menu);
+					}
+//--------------------------------------------------------------------------------------------------------------------------
 					else if(key==KEY_6)									//sps: Дублировать файл
 					{
 						duplicFile(&fno,megapath,short_name);			//sps: Функция дублирования файла
