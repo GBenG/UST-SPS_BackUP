@@ -666,7 +666,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					MUTEX_LOCK(window->mutex)										//sps: зажали мютекс окна
 
 						Screen_Clear(screen);
-						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTION);
 
 						Screen_PutString(screen,offset,true);
 						Screen_PutString(screen,msg,false);
@@ -821,7 +821,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
 							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_TXT);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTION);
 
 							Screen_PutString(screen,offset,true);
 
@@ -935,7 +935,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
 
 							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_HEX);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTION);
 
 							Screen_PutString(screen,msg,false);					//sps: Отрисовка окна без курсором
 
@@ -1010,9 +1010,48 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 			sLCDUI_Window* window = LCDUI_Supervisor_GetMyWindow();
 
+			signed int MenuChose=0;
+			eKey rkey;
+
+
+
+
 			ReGrab(false);	//sps: Захватываем первую часть файла в скользящий буфер
 
-			for(;;)
+			for(;;)			//sps: DANGER!!!! БЫДЛОКОД!!!
+			{
+
+				sDynMenu* menu = DynMenuCreateWithCapacity("[FILE OPTIONS]", 2);
+				DynMenuAddItem(menu,"- Txt Viewer");
+				DynMenuAddItem(menu,"- Hex Viewer");
+				DynMenuAddItem(menu,"- Hex Editor");
+				DynMenuSetCursor(menu,0);
+
+				MenuChose=DynMenuShow(menu);
+
+				DBGF("MenuChose=%d",MenuChose);
+
+				switch(MenuChose)
+				{
+					case 0:
+							point	=	(point/tstrsz)*tstrsz;				//sps: Уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
+							rkey 	= 	TxtView(window);
+							break;
+					case 1:
+							point	=	(point/hstrsz)*hstrsz;				//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+							rkey 	= 	HexView(window);
+							break;
+					case 2:
+							point	=	(point/hstrsz)*hstrsz;				//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
+							rkey 	=	 HexEdit(window);
+							break;
+				}
+				if (MenuChose==-1)	{break;}
+				if (rkey==KEY_LSOFT){break;}
+
+				DynMenuDelete(menu);
+			}
+/*			for(;;)
 			{
 				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
 			//	eKey rkey = TxtEdit(window);								//sps: Открываем TXT-редактор (Beta!!!)
@@ -1029,7 +1068,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					point=(point/tstrsz)*tstrsz;							//sps: Уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
 				}
 					else{break;}											//sps: Закрыть просмотр
-			}
+			}*/
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
 		UNS_FREE(hexstr);
@@ -1167,17 +1206,6 @@ static void diskExplorer(){
 
 						need_rebuild=true;								// Обновляем окно после переименовывания
 						retval=DYNMENU_KEYHANDLER_SHOULD_CANCEL;		// Чтобы убрать зависшее в памяти окна старое имя файла
-					}
-//--------------------------------------------------------------------------------------------------------------------------
-					else if(key==KEY_5)									//sps: ЭКСПЕРЕМЕНТ
-					{
-						sDynMenu* menu = DynMenuCreateWithCapacity("[DYN MENU]", 3);
-						DynMenuAddItem(menu,"Пункт 1");
-						DynMenuAddItem(menu,"Punkt 2");
-						DynMenuAddItem(menu,LANG_DISKEXP_PERMISSION);
-						DynMenuSetCursor(menu,1);
-						DynMenuShow(menu);
-						DynMenuDelete(menu);
 					}
 //--------------------------------------------------------------------------------------------------------------------------
 					else if(key==KEY_6)									//sps: Дублировать файл
