@@ -812,7 +812,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						/////////////////////////////////////////////// ФОРМИРУЕМ ВЕРХНЮЮ СТРОКУ СМЕЩЕНИЯ ///////////////////////////////////////////////////
 
-						sprintf(offset,"OFFSET:%08X",offs+point+(scx+(scy*hstrsz))-1);		//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+						sprintf(offset,"CURSOR:%08X",offs+point+(scx+(scy*hstrsz))-1);		//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 
 						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ /////////////////////////////////////////////////////////////
 
@@ -1021,7 +1021,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			for(;;)			//sps: DANGER!!!! БЫДЛОКОД!!!
 			{
 
-				sDynMenu* menu = DynMenuCreateWithCapacity("[FILE OPTIONS]", 2);
+				sDynMenu* menu = DynMenuCreateWithCapacity("[FILE OPTIONS]", 2);;
 				DynMenuAddItem(menu,"- Txt Viewer");
 				DynMenuAddItem(menu,"- Hex Viewer");
 				DynMenuAddItem(menu,"- Hex Editor");
@@ -1206,6 +1206,28 @@ static void diskExplorer(){
 
 						need_rebuild=true;								// Обновляем окно после переименовывания
 						retval=DYNMENU_KEYHANDLER_SHOULD_CANCEL;		// Чтобы убрать зависшее в памяти окна старое имя файла
+					}
+//--------------------------------------------------------------------------------------------------------------------------
+					else if(key==KEY_5)									//sps: Переименовать / переместить файл
+					{
+						int radiolistvalue=0;
+						_LCDUI_Form* form = LCDUI_Form_NewUncommon(LANG_MENU_BUTTON_NEXT,LANG_MENU_BUTTON_BACK,false);
+						LCDUI_Form_AddStringControl(form,"--------------\n eInvisible \n --------------");
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-1", false, 0, &radiolistvalue,eInvisible));
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-1", false, 1, &radiolistvalue,eInvisible));
+						LCDUI_Form_AddStringControl(form,"--------------\n eClassic \n --------------");
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-2", false, 0, &radiolistvalue,eClassic));
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-2", false, 1, &radiolistvalue,eClassic));\
+						LCDUI_Form_AddStringControl(form,"--------------\n eBird \n --------------");
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-3", false, 0, &radiolistvalue,eBird));
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-3", false, 1, &radiolistvalue,eBird));
+						LCDUI_Form_AddStringControl(form,"--------------\n eMenuItem \n --------------");
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-4", false, 0, &radiolistvalue,eMenuItem));
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-4", false, 1, &radiolistvalue,eMenuItem));
+						LCDUI_Form_AddStringControl(form,"--------------\n eMenuFolder \n --------------");
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-5", false, 0, &radiolistvalue,eMenuFolder));
+						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-5", false, 1, &radiolistvalue,eMenuFolder));
+						_LCDUI_Action action=LCDUI_Form_Show(form);
 					}
 //--------------------------------------------------------------------------------------------------------------------------
 					else if(key==KEY_6)									//sps: Дублировать файл
