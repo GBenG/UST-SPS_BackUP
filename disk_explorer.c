@@ -666,7 +666,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					MUTEX_LOCK(window->mutex)										//sps: зажали мютекс окна
 
 						Screen_Clear(screen);
-						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTION);
+						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
 
 						Screen_PutString(screen,offset,true);
 						Screen_PutString(screen,msg,false);
@@ -821,7 +821,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
 
 							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTION);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
 
 							Screen_PutString(screen,offset,true);
 
@@ -935,7 +935,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
 
 							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTION);
+							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
 
 							Screen_PutString(screen,msg,false);					//sps: Отрисовка окна без курсором
 
@@ -1013,24 +1013,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			signed int MenuChose=0;
 			eKey rkey;
 
-
-
-
 			ReGrab(false);	//sps: Захватываем первую часть файла в скользящий буфер
 
-			for(;;)			//sps: DANGER!!!! БЫДЛОКОД!!!
+			for(;;)
 			{
-
-				sDynMenu* menu = DynMenuCreateWithCapacity("[FILE OPTIONS]", 2);;
-				DynMenuAddItem(menu,"- Txt Viewer");
-				DynMenuAddItem(menu,"- Hex Viewer");
-				DynMenuAddItem(menu,"- Hex Editor");
-				DynMenuSetCursor(menu,0);
-
-				MenuChose=DynMenuShow(menu);
-
-				DBGF("MenuChose=%d",MenuChose);
-
 				switch(MenuChose)
 				{
 					case 0:
@@ -1046,29 +1032,24 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							rkey 	=	 HexEdit(window);
 							break;
 				}
-				if (MenuChose==-1)	{break;}
+
 				if (rkey==KEY_LSOFT){break;}
 
-				DynMenuDelete(menu);
+				_LCDUI_Form* form = LCDUI_Form_NewUncommon(LANG_MENU_BUTTON_OK,LANG_MENU_BUTTON_CANCEL,false);
+
+				LCDUI_Form_AddStringControl(form,"[FILE OPTIONS]");
+				LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("- Txt Viewer", false, 0, &MenuChose,eInvisible));
+				LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("- Hex Viewer", false, 1, &MenuChose,eInvisible));
+				LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("- Hex Editor", false, 2, &MenuChose,eInvisible));
+
+				LCDUI_Form_Show(form);
+
+				DBGF("MenuChose=%d",MenuChose);
+
+				if (MenuChose==-1)	{break;}
+
 			}
-/*			for(;;)
-			{
-				eKey rkey = TxtView(window);								//sps: Открываем TXT-просмотрщик
-			//	eKey rkey = TxtEdit(window);								//sps: Открываем TXT-редактор (Beta!!!)
-				if(rkey==KEY_RSOFT)											//sps: Смена вида?
-				{
 
-					point=(point/hstrsz)*hstrsz;							//sps: Уравнитель POINT-a "TXT>>HEX" (Выравниваем точку просмотра по началу строки)
-
-				//	rkey = HexView(window);									//sps: Открываем HEX-просмотрщик
-					rkey = HexEdit(window);									//sps: Открываем HEX-редактор
-
-					if(rkey==KEY_LSOFT){break;}								//sps: Закрыть просмотр
-
-					point=(point/tstrsz)*tstrsz;							//sps: Уравнитель POINT-a "HEX>>TXT" (Выравниваем точку просмотра по началу строки)
-				}
-					else{break;}											//sps: Закрыть просмотр
-			}*/
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
 		UNS_FREE(hexstr);
@@ -1206,28 +1187,6 @@ static void diskExplorer(){
 
 						need_rebuild=true;								// Обновляем окно после переименовывания
 						retval=DYNMENU_KEYHANDLER_SHOULD_CANCEL;		// Чтобы убрать зависшее в памяти окна старое имя файла
-					}
-//--------------------------------------------------------------------------------------------------------------------------
-					else if(key==KEY_5)									//sps: Переименовать / переместить файл
-					{
-						int radiolistvalue=0;
-						_LCDUI_Form* form = LCDUI_Form_NewUncommon(LANG_MENU_BUTTON_NEXT,LANG_MENU_BUTTON_BACK,false);
-						LCDUI_Form_AddStringControl(form,"--------------\n eInvisible \n --------------");
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-1", false, 0, &radiolistvalue,eInvisible));
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-1", false, 1, &radiolistvalue,eInvisible));
-						LCDUI_Form_AddStringControl(form,"--------------\n eClassic \n --------------");
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-2", false, 0, &radiolistvalue,eClassic));
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-2", false, 1, &radiolistvalue,eClassic));\
-						LCDUI_Form_AddStringControl(form,"--------------\n eBird \n --------------");
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-3", false, 0, &radiolistvalue,eBird));
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-3", false, 1, &radiolistvalue,eBird));
-						LCDUI_Form_AddStringControl(form,"--------------\n eMenuItem \n --------------");
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-4", false, 0, &radiolistvalue,eMenuItem));
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-4", false, 1, &radiolistvalue,eMenuItem));
-						LCDUI_Form_AddStringControl(form,"--------------\n eMenuFolder \n --------------");
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-5", false, 0, &radiolistvalue,eMenuFolder));
-						LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("PUNKT-5", false, 1, &radiolistvalue,eMenuFolder));
-						_LCDUI_Action action=LCDUI_Form_Show(form);
 					}
 //--------------------------------------------------------------------------------------------------------------------------
 					else if(key==KEY_6)									//sps: Дублировать файл

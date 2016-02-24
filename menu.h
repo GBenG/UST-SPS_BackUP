@@ -173,9 +173,6 @@
 	#define LANG_MENU_BUTTON_ANSWER		"Вiдп."
 	#define LANG_MENU_BUTTON_EXIT		"Вихід"
 	#define LANG_MENU_BUTTON_OPTIONS	"Опції"
-	#define LANG_MENU_BUTTON_HEX		"[HEX]"
-	#define LANG_MENU_BUTTON_TXT		"[TXT]"
-	#define LANG_MENU_BUTTON_OPTION		"[OPT]"
 
 	#define LANG_MENU_BOOK_SETTINGS		"ГОЛОВНЕ МЕНЮ"
 	#define LANG_MENU_CASHLESS_PAYMENTS "Безготівкові платежі"
