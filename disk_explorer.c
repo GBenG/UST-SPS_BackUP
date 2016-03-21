@@ -391,6 +391,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 		space1[spcount1]=0;
 		space2[spcount2]=0;
 
+
 //-----------------------------------------------------------------------------------------------
 
 		//sps: Проверяем что все создалось правильно
@@ -733,7 +734,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //-----------------------------------------------------------------------------------------------
 
 				//sps: Проверяем что все создалось правильно
-				if(offset==NULL || hexstr==NULL || msg==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
+				if(offset==NULL || hexstr==NULL || hxblok==NULL || asblok==NULL || space1==NULL || space2==NULL) return KEY_NONE;
 
 //-----------------------------------------------------------------------------------------------
 
@@ -909,17 +910,69 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				sScreen* screen = &window->screen;
 
-					   need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
-				char*  msg=UNS_MALLOC(scrsize+20);								//sps: Сформированное сообщение для вывода на экран
+				need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
+
+				char 		screen_mass[LCD_CLIENT_WIDTH][LCD_CLIENT_HEIGHT];				//sps: Массив экрана
+				bool		shaden_mass[LCD_CLIENT_WIDTH][LCD_CLIENT_HEIGHT];				//sps: Массив инверсий ячеек экрана
 
 				if(msg==NULL) return KEY_NONE;
+
 
 //-----------------------------------------------------------------------------------------------
 				for (;;) {
 					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
 					{
 //----------------------------------------------------------------------------------------------
-						memset(msg,0,scrsize+20);								//sps: Чистим фсе
+					//	char g = 0x30;
+						for(int i=0;i<LCD_CLIENT_WIDTH;i++)
+						{
+							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
+							{
+								screen_mass[i][j]='^';
+							}
+						}
+
+						for(int i=1;i<LCD_CLIENT_WIDTH;i++)
+						{
+							for(int j=1;j<LCD_CLIENT_HEIGHT;j++)
+							{
+								screen_mass[i][j]=wbuf[i*j];	//!!!!!!!!!!! LAZHA !!!!!!!!!!!
+							}
+						}
+
+						for(int i=0;i<LCD_CLIENT_WIDTH;i++)
+						{
+							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
+							{
+								shaden_mass[i][j]=false;
+							}
+						}
+						shaden_mass[1][1]=true;
+//----------------------------------------------------------------------------------------------
+						MUTEX_LOCK(window->mutex)
+
+						Screen_Clear(screen);
+						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
+
+						for(int i=0;i<LCD_CLIENT_HEIGHT;i++)
+						{
+							for(int j=0;j<LCD_CLIENT_WIDTH;j++)
+							{
+								//Screen_PutChar(screen,screen_mass[j][i],false);
+								if(shaden_mass[j][i]){
+									Screen_PutChar(screen,screen_mass[j][i],true);
+								}else{
+									Screen_PutChar(screen,screen_mass[j][i],false);
+								}
+							}
+						}
+
+						MUTEX_UNLOCK(window->mutex)										//sps: отдали мютекс окна
+
+						need_redraw=false;											//sps: закрыли иф, пока кнопку не ткнут
+					}
+//----------------------------------------------------------------------------------------------
+/*						memset(msg,0,scrsize+20);								//sps: Чистим фсе
 						int i;
 						for(i=point;i<point+scrsize;i++)						//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
 						{
@@ -942,6 +995,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						MUTEX_UNLOCK(window->mutex)								//sps: отдали мютекс окна
 						need_redraw=false;										//sps: закрыли иф, пока кнопку не ткнут
 					}
+*/
 //-----------------------------------------------------------------------------------------------
 					eKey key = LCDUI_Window_FetchKey(window);						//sps: проверяем кнопочки
 
@@ -975,14 +1029,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 						else if (key == KEY_RSOFT)
 						{
-							UNS_FREE(msg);
 							return key;
 							break;
 						}
 							else if (key == KEY_LSOFT)
 						{
-							UNS_FREE(msg);
-
 							if(chestat){	 //sps: Если были изменения в буфере, предложим сохранить
 								eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 								if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
