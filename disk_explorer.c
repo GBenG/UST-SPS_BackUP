@@ -923,42 +923,36 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
 					{
 //----------------------------------------------------------------------------------------------
-					//	char g = 0x30;
-						for(int i=0;i<LCD_CLIENT_WIDTH;i++)
-						{
-							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
-							{
-								screen_mass[i][j]='^';
-							}
-						}
-
-						for(int i=1;i<LCD_CLIENT_WIDTH;i++)
-						{
-							for(int j=1;j<LCD_CLIENT_HEIGHT;j++)
-							{
-								screen_mass[i][j]=wbuf[i*j];	//!!!!!!!!!!! LAZHA !!!!!!!!!!!
-							}
-						}
-
-						for(int i=0;i<LCD_CLIENT_WIDTH;i++)
+						for(int i=0;i<LCD_CLIENT_WIDTH;i++)						//sps: чистим маску инверсий
 						{
 							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
 							{
 								shaden_mass[i][j]=false;
 							}
 						}
-						shaden_mass[1][1]=true;
+//----------------------------------------------------------------------------------------------
+						for(int i=0;i<LCD_CLIENT_WIDTH;i++)						//sps: "MASS CONSTRUCTOR" Формируем строки в массиве кадра экране
+						{
+							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
+							{
+								if(wbuf[j*LCD_CLIENT_WIDTH+i]<' ')
+								{ screen_mass[i][j]=' '; }
+								else
+								{ screen_mass[i][j]=wbuf[j*LCD_CLIENT_WIDTH+i]; }
+							}
+						}
+//----------------------------------------------------------------------------------------------
+				//		shaden_mass[1][1]=true;
 //----------------------------------------------------------------------------------------------
 						MUTEX_LOCK(window->mutex)
 
 						Screen_Clear(screen);
 						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
 
-						for(int i=0;i<LCD_CLIENT_HEIGHT;i++)
+						for(int i=0;i<LCD_CLIENT_HEIGHT;i++)					//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
 						{
 							for(int j=0;j<LCD_CLIENT_WIDTH;j++)
 							{
-								//Screen_PutChar(screen,screen_mass[j][i],false);
 								if(shaden_mass[j][i]){
 									Screen_PutChar(screen,screen_mass[j][i],true);
 								}else{
