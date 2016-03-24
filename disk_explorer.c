@@ -372,7 +372,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 		char*  		offset=UNS_MALLOC(tstrsz);										//sps: Смещение номера считанного байта файла в НЕХ
 		char*  		hexstr=UNS_MALLOC(tstrsz);										//sps: Сформированная строка на вывод в окно
-		char*  		msg=UNS_MALLOC(scrsize);										//sps: Сформированное сообщение для вывода на экран
+		char*  		msg=UNS_MALLOC(scrsize+20);										//sps: Сформированное сообщение для вывода на экран
 
 		char*  		hxblok=UNS_MALLOC(hstrsz*2+1);									//sps: Блок шестнадцтеричных значений считанных байт
 		char*  		asblok=UNS_MALLOC(hstrsz+1);									//sps: Блок ASCII значений считанных байт
@@ -920,48 +920,50 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 //-----------------------------------------------------------------------------------------------
 				for (;;) {
-					if(need_redraw)												//sps: если что-то поменялось - перерисовываем окно
+					if(need_redraw)													//sps: если что-то поменялось - перерисовываем окно
 					{
 //----------------------------------------------------------------------------------------------
-						for(int i=0;i<LCD_CLIENT_WIDTH;i++)						//sps: чистим маску инверсий
+						for(int x=0;x<LCD_CLIENT_WIDTH;x++)							//sps: чистим маску инверсий
 						{
-							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
+							for(int y=0;y<LCD_CLIENT_HEIGHT;y++)
 							{
-								shaden_mass[i][j]=false;
+								shaden_mass[x][y]=false;
 							}
 						}
 //----------------------------------------------------------------------------------------------
-						for(int i=0;i<LCD_CLIENT_WIDTH;i++)						//sps: "MASS CONSTRUCTOR" Формируем строки в массиве кадра экране
+						int masspos;
+						for(int y=0;y<LCD_CLIENT_HEIGHT;y++)						//sps: Перевод
 						{
-							for(int j=0;j<LCD_CLIENT_HEIGHT;j++)
+							for(int x=0;x<LCD_CLIENT_WIDTH;x++)
 							{
-								if(wbuf[j*LCD_CLIENT_WIDTH+i]<' ')
-								{ screen_mass[i][j]=' '; }
+								masspos = point+(y*LCD_CLIENT_WIDTH+x);
+								if(wbuf[masspos]<' ')								//sps: Заменяем непечатаемые символы
+								{ screen_mass[x][y]=' '; }
 								else
-								{ screen_mass[i][j]=wbuf[j*LCD_CLIENT_WIDTH+i]; }
+								{ screen_mass[x][y]=wbuf[masspos]; }
 							}
 						}
 //----------------------------------------------------------------------------------------------
-				//		shaden_mass[1][1]=true;
+					//	shaden_mass[1][1]=true;										//sps: Тест маски инверсий
 //----------------------------------------------------------------------------------------------
-						MUTEX_LOCK(window->mutex)
+						MUTEX_LOCK(window->mutex)									//sps: зажали мютекс окна
 
 						Screen_Clear(screen);
 						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
 
-						for(int i=0;i<LCD_CLIENT_HEIGHT;i++)					//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
+						for(int y=0;y<LCD_CLIENT_HEIGHT;y++)						//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
 						{
-							for(int j=0;j<LCD_CLIENT_WIDTH;j++)
+							for(int x=0;x<LCD_CLIENT_WIDTH;x++)
 							{
-								if(shaden_mass[j][i]){
-									Screen_PutChar(screen,screen_mass[j][i],true);
+								if(shaden_mass[x][y]){
+									Screen_PutChar(screen,screen_mass[x][y],true);
 								}else{
-									Screen_PutChar(screen,screen_mass[j][i],false);
+									Screen_PutChar(screen,screen_mass[x][y],false);
 								}
 							}
 						}
 
-						MUTEX_UNLOCK(window->mutex)										//sps: отдали мютекс окна
+						MUTEX_UNLOCK(window->mutex)									//sps: отдали мютекс окна
 
 						need_redraw=false;											//sps: закрыли иф, пока кнопку не ткнут
 					}
