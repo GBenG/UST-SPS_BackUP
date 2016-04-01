@@ -44,6 +44,15 @@
 #endif
 #include "update_fw.h"
 
+typedef struct {
+	char symbol;
+	bool inverted;
+} sScreenSymbol;
+
+typedef struct {
+	sScreenSymbol symbols[LCD_CLIENT_WIDTH][LCD_CLIENT_HEIGHT];
+} sScreenAllSymbols;
+
 static bool need_rebuild=false;
 
 static void showFileInfo(FILINFO* fno, char* short_readable_name){
@@ -636,6 +645,27 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				HexReconstruct(false);												//sps: Обновляем окно TODO уйти от общих для нескольких подфункций переменных
 			}
 //================================================================================================
+// SPS :: Печать окна НЕХ-просмотрщика/редактора
+//================================================================================================
+			void FrameOut(sLCDUI_Window* window, sScreenAllSymbols* data)
+			{
+
+				MUTEX_LOCK(window->mutex);									//sps: зажали мютекс окна
+				sScreen* screen = &window->screen;
+
+				Screen_Clear(screen);
+				Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
+
+				for(int y=0;y<LCD_CLIENT_HEIGHT;y++)						//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
+				{
+					for(int x=0;x<LCD_CLIENT_WIDTH;x++) {
+						Screen_PutChar(screen,data->symbols[x][y].symbol,data->symbols[x][y].inverted?true:false);
+					}
+				}
+
+				MUTEX_UNLOCK(window->mutex);									//sps: отдали мютекс окна
+			}
+//================================================================================================
 // SPS :: HЕХ-просмотрщик
 //================================================================================================
 			eKey HexView(sLCDUI_Window* window) {
@@ -908,12 +938,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			eKey TxtView(sLCDUI_Window* window) {
 
-				sScreen* screen = &window->screen;
 
 				need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
-
-				char 		screen_mass[LCD_CLIENT_WIDTH][LCD_CLIENT_HEIGHT];				//sps: Массив экрана
-				bool		shaden_mass[LCD_CLIENT_WIDTH][LCD_CLIENT_HEIGHT];				//sps: Массив инверсий ячеек экрана
+				sScreenAllSymbols localMassData = { 0 };
+				sScreenAllSymbols* localMass = &localMassData;
 
 				if(msg==NULL) return KEY_NONE;
 
@@ -923,29 +951,22 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					if(need_redraw)													//sps: если что-то поменялось - перерисовываем окно
 					{
 //----------------------------------------------------------------------------------------------
-						for(int x=0;x<LCD_CLIENT_WIDTH;x++)							//sps: чистим маску инверсий
-						{
-							for(int y=0;y<LCD_CLIENT_HEIGHT;y++)
-							{
-								shaden_mass[x][y]=false;
-							}
-						}
-//----------------------------------------------------------------------------------------------
 						int masspos;
 						for(int y=0;y<LCD_CLIENT_HEIGHT;y++)						//sps: Перевод
 						{
 							for(int x=0;x<LCD_CLIENT_WIDTH;x++)
 							{
 								masspos = point+(y*LCD_CLIENT_WIDTH+x);
-								if(wbuf[masspos]<' ')								//sps: Заменяем непечатаемые символы
-								{ screen_mass[x][y]=' '; }
-								else
-								{ screen_mass[x][y]=wbuf[masspos]; }
+							//sps: Заменяем непечатаемые символы
+								localMass->symbols[x][y].symbol=((wbuf[masspos]<' ')?' ':wbuf[masspos]);
 							}
 						}
 //----------------------------------------------------------------------------------------------
 					//	shaden_mass[1][1]=true;										//sps: Тест маски инверсий
 //----------------------------------------------------------------------------------------------
+/*
+						sScreen* screen = &window->screen;
+
 						MUTEX_LOCK(window->mutex)									//sps: зажали мютекс окна
 
 						Screen_Clear(screen);
@@ -964,7 +985,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 
 						MUTEX_UNLOCK(window->mutex)									//sps: отдали мютекс окна
-
+*/
+						FrameOut(window, localMass);
 						need_redraw=false;											//sps: закрыли иф, пока кнопку не ткнут
 					}
 //----------------------------------------------------------------------------------------------
