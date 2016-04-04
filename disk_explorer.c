@@ -44,12 +44,12 @@
 #endif
 #include "update_fw.h"
 
-typedef struct {
+typedef struct {				//sps: Структура массивов символов и инверсий
 	char symbol;
 	bool inverted;
 } sScreenSymbol;
 
-typedef struct {
+typedef struct {				//sps: Размерность массивов структуры
 	sScreenSymbol symbols[LCD_CLIENT_WIDTH][LCD_CLIENT_HEIGHT];
 } sScreenAllSymbols;
 
@@ -940,8 +940,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 
 				need_redraw=true;										//sps: Пнуть в ТРУ если нужно перисовать окошко
-				sScreenAllSymbols localMassData = { 0 };
-				sScreenAllSymbols* localMass = &localMassData;
+				sScreenAllSymbols localMassData = { 0 };				//sps: Создаем пустую структуру массивов
+				sScreenAllSymbols* localMass = &localMassData;			//sps: Берем указатель
 
 				if(msg==NULL) return KEY_NONE;
 
@@ -962,58 +962,11 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 						}
 //----------------------------------------------------------------------------------------------
-					//	shaden_mass[1][1]=true;										//sps: Тест маски инверсий
+					//	localMass->symbols[1][1].inverted=true;					//sps: Тест инверсии
 //----------------------------------------------------------------------------------------------
-/*
-						sScreen* screen = &window->screen;
-
-						MUTEX_LOCK(window->mutex)									//sps: зажали мютекс окна
-
-						Screen_Clear(screen);
-						Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
-
-						for(int y=0;y<LCD_CLIENT_HEIGHT;y++)						//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
-						{
-							for(int x=0;x<LCD_CLIENT_WIDTH;x++)
-							{
-								if(shaden_mass[x][y]){
-									Screen_PutChar(screen,screen_mass[x][y],true);
-								}else{
-									Screen_PutChar(screen,screen_mass[x][y],false);
-								}
-							}
-						}
-
-						MUTEX_UNLOCK(window->mutex)									//sps: отдали мютекс окна
-*/
-						FrameOut(window, localMass);
-						need_redraw=false;											//sps: закрыли иф, пока кнопку не ткнут
-					}
-//----------------------------------------------------------------------------------------------
-/*						memset(msg,0,scrsize+20);								//sps: Чистим фсе
-						int i;
-						for(i=point;i<point+scrsize;i++)						//sps: "TXTBUF CONSTRUCTOR Lite" Формируем шесть строк на экране
-						{
-							if (i>=size) break;									//sps: Конец файла?  Ну так валим отсюда
-							if(wbuf[i]<' ')
-							{ msg[i-point]=' '; }
-							else
-							{ msg[i-point]=wbuf[i]; }
-						}
-
-						msg[i-point]=0;
-//----------------------------------------------------------------------------------------------
-						MUTEX_LOCK(window->mutex)								//sps: зажали мютекс окна
-
-							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
-
-							Screen_PutString(screen,msg,false);					//sps: Отрисовка окна без курсором
-
-						MUTEX_UNLOCK(window->mutex)								//sps: отдали мютекс окна
+						FrameOut(window, localMass);							//sps: Выводим кадр на экран
 						need_redraw=false;										//sps: закрыли иф, пока кнопку не ткнут
 					}
-*/
 //-----------------------------------------------------------------------------------------------
 					eKey key = LCDUI_Window_FetchKey(window);						//sps: проверяем кнопочки
 
