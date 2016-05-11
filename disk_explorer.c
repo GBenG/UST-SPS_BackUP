@@ -565,7 +565,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 					(offslide)?sprintf(offset,"%08X",offs+j):sprintf(offset,"%08X",j-point); //sps: Cмещение OFFSET по строкам (скользящее):(неподвижное)
 
 					frame->symbols[0][yh].symbol=offset[7];
-					frame->symbols[1][yh].symbol=' ';
+					frame->symbols[1][yh].symbol=' ';									//sps: Забиваем пробелы т.к. касса не умеет отображать дальше \0-ячеек
+					frame->symbols[shift+hstrsz*2][yh].symbol=' ';						//sps: Забиваем пробелы т.к. касса не умеет отображать дальше \0-ячеек
 
 					for(int i=j;i<j+hstrsz;i++)											//sps: формируем hxblok и asblok
 					{
@@ -790,8 +791,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						sScreenAllSymbols* frame = &localMassData;							//sps: Берем указатель
 
 //-----------------------------------------------------------------------------------------------
-				int    	cursor=0;															//sps: Позиция на которой сейчас основной курсор
-				int    	slcurs=0;															//sps: Позиция на которой сейчас вторичный курсор
+			//	int    	cursor=0;															//sps: Позиция на которой сейчас основной курсор
+			//	int    	slcurs=0;															//sps: Позиция на которой сейчас вторичный курсор
 				int		mcx=hex_Lmarg, mcy=0;												//sps: Координаты основного указателя
 				int		shad_cx=mcx, shad_cy=mcy;											//sps: Теневые координаты для предпроверки граничных условий
 				int		scx=0, scy=0;														//sps: Координаты вторичного указателя
@@ -807,17 +808,18 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				for (;;)
 				{
 						if(need_reconstruct){
-							HexReconstruct(true, frame);												//sps: Конструируем окно
+							HexReconstruct(true, frame);										//sps: Конструируем окно
 							need_reconstruct=false;
 						}
 
 					if(need_redraw)																//sps: если что-то поменялось - перерисовываем окно
 					{
+						frame->symbols[mcx][mcy+1].inverted=false;
 
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
-						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;						//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
-						if ((fpoint+hstrsz)<hstrsz){fpoint=0;}								//sps: Работа с первой строкой
+						fpoint=(offs+point+shad_cy*hstrsz+shad_cx/2)-1;							//sps: Вычесляем фактическое положение курсора в файле для контроля EOF
+						if ((fpoint+hstrsz)<hstrsz){fpoint=0;}									//sps: Работа с первой строкой
 
 						if(fpoint<=(fno->fsize)-1){
 
@@ -844,14 +846,14 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								shad_cy=0;
 								mcy=shad_cy;
 								HexScreenUp();													//sps: Листаем вверх
-								HexReconstruct(true, frame);											//sps: Конструируем окно
+								HexReconstruct(true, frame);									//sps: Конструируем окно
 							}else{mcy=shad_cy;}
 							//--------------------------------------
 							if(shad_cy>(LCD_CLIENT_HEIGHT-2)){
 								shad_cy=LCD_CLIENT_HEIGHT-2;
 								mcy=shad_cy;
 								HexScreenDown();												//sps: Листаем вниз
-								HexReconstruct(true, frame);											//sps: Конструируем окно
+								HexReconstruct(true, frame);									//sps: Конструируем окно
 							}else{mcy=shad_cy;}
 							//--------------------------------------
 						}else{
@@ -872,16 +874,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						/////////////////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
-						cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
-						scy=mcy;
-						scx=mcx/2;
-						slcurs=LCD_CLIENT_WIDTH*scy+(scx+spcount1+hstrsz*2+spcount2);		//sps: Вычесляем позицию вторичного курсора по координатам
+						//cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
+						//scy=mcy;
+						//scx=mcx/2;
+						//slcurs=LCD_CLIENT_WIDTH*scy+(scx+spcount1+hstrsz*2+spcount2);		//sps: Вычесляем позицию вторичного курсора по координатам
 
 						/////////////////////////////////////////////// ФОРМИРУЕМ ВЕРХНЮЮ СТРОКУ СМЕЩЕНИЯ ///////////////////////////////////////////////////
 
 					//	sprintf(offset,"CURSOR:%08X",offs+point+(scx+(scy*hstrsz))-1);		//sps: получаем OFFSET первой строки в шестнадцтеричном формате
 
-					//	frame->symbols[mcx][mcy].inverted=true;
+						frame->symbols[mcx][mcy+1].inverted=true;
 					//	frame->symbols[scy][scy].inverted=true;
 
 
