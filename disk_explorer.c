@@ -814,7 +814,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 					if(need_redraw)																//sps: если что-то поменялось - перерисовываем окно
 					{
-						frame->symbols[mcx][mcy+1].inverted=false;
+						frame->symbols[mcx][mcy+1].inverted=false;								//sps: Чистим предидущие положения курсоров
+						frame->symbols[scx][scy+1].inverted=false;
 
 						/////////////////////////////////////////////// БЛОК ПРЕДПРОВЕРКИ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
 
@@ -823,7 +824,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 						if(fpoint<=(fno->fsize)-1){
 
-						//--------------------------------------
+							//--------------------------------------
 							if(shad_cx < (hex_Lmarg))
 							{
 								if ((point+offs+shad_cy)!=0)									//sps: Уперлись в начало файла? Никуда не перескакиваем
@@ -872,45 +873,18 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 						}
 
-						/////////////////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ КООРДИНАТ КУРСОРА ///////////////////////////////////////////////
+						////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ И УСТАНОВКИ КООРДИНАТ КУРСОРА ////////////////////////////////////////////////
 
-						//cursor=LCD_CLIENT_WIDTH*mcy+mcx;									//sps: Вычесляем позицию основного курсора по координатам
-						//scy=mcy;
-						//scx=mcx/2;
-						//slcurs=LCD_CLIENT_WIDTH*scy+(scx+spcount1+hstrsz*2+spcount2);		//sps: Вычесляем позицию вторичного курсора по координатам
-
-						/////////////////////////////////////////////// ФОРМИРУЕМ ВЕРХНЮЮ СТРОКУ СМЕЩЕНИЯ ///////////////////////////////////////////////////
-
-					//	sprintf(offset,"CURSOR:%08X",offs+point+(scx+(scy*hstrsz))-1);		//sps: получаем OFFSET первой строки в шестнадцтеричном формате
+						scy=mcy;
+						scx=shift+hstrsz*2+mcx/2;
 
 						frame->symbols[mcx][mcy+1].inverted=true;
-					//	frame->symbols[scy][scy].inverted=true;
-
+						frame->symbols[scx][scy+1].inverted=true;
 
 						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ /////////////////////////////////////////////////////////////
 
 						FrameOut(window, frame);											//sps: Выводим кадр на экран
-/*
-						sScreen* screen = &window->screen;
 
-						MUTEX_LOCK(window->mutex)											//sps: зажали мютекс окна
-
-							Screen_Clear(screen);
-							Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
-
-							Screen_PutString(screen,offset,true);
-
-							for(int i=0;i<scrsize-tstrsz;i++)								//sps: Отрисовка окна с курсором
-							{
-								if(i==cursor || i==slcurs){
-									Screen_PutChar(screen,msg[i],true);
-								}else{
-									Screen_PutChar(screen,msg[i],false);
-								}
-							}
-
-						MUTEX_UNLOCK(window->mutex)											//sps: отдали мютекс окна
-*/
 //-----------------------------------------------------------------------------------------------
 
 							need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
