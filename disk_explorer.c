@@ -551,64 +551,36 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 // SPS :: Печать окна НЕХ-просмотрщика/редактора
 //================================================================================================
-			void printHex(sScreenAllSymbols* frame)										//sps: TODO Переписать под массивы
+			void printFSCR(bool hex, sScreenAllSymbols* frame, bool offslide)
 			{
+				char*  	msg=UNS_MALLOC(scrsize+LCD_CLIENT_HEIGHT+1);
+//----------------------------------------------------------------------------------------------
+				if(!hex){																	//sps: Если это не НЕХ-представление файла - печатаем текст
 
-		/*		char*  	hpmsg=UNS_MALLOC(scrsize+20);
-				char 	twohex[2];													//sps: Бфер для двухсимольного значения байта в НЕХ-е
+					memcpy(msg,wbuf+point,scrsize);
+					for(int i=0;i<scrsize;i++){if(msg[i]<' ')msg[i]=' ';}					//sps: замена непечатаемых спецсимволов
+					printMessage(msg);
 
-				memset(offset,0,tstrsz+1);											//sps: Чистим фсе
-				memset(hexstr,0,tstrsz+1);
-				memset(hpmsg,0,scrsize+20);
+				}else{																		//sps: Если это НЕХ-представление - формируем НЕХ в текст
 
-				char*	pmsg=hpmsg;													//sps: Создаем указатель для склеивания всех блоков в страницу
-
-				pmsg+=sprintf(pmsg,"OFFSET:%08X",offs+point);						//sps: получаем OFFSET первой строки в шестнадцтеричном формате
-				pmsg+=sprintf(pmsg,"\n");											//sps: Форматируем строку перемещением каретки Форматируем строку
-
-//-----------------------------------------------------------------------------------------------
-				for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
-				{
-
-					memset(hxblok,0,hstrsz*2);									//sps: Чистим фсе
-					memset(asblok,0,hstrsz);
-
-					for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
+					char*	pmsg=msg;
+					for(int y=0;y<LCD_CLIENT_HEIGHT;y++)									//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
 					{
-						sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
-						hxblok[(i-j)*2]=twohex[0];
-						hxblok[(i-j)*2+1]=twohex[1];
-
-						if ((offs+i)>((fno->fsize)-1)){								//sps: Забиваем пробелами все что больше размера файла
-							hxblok[(i-j)*2]=LCD_SYMBOL_FREESPACE;
-							hxblok[(i-j)*2+1]=LCD_SYMBOL_FREESPACE;
+						for(int x=0;x<LCD_CLIENT_WIDTH;x++) {
+							if(frame->symbols[x][y].symbol==LCD_SYMBOL_CHESS && x<LCD_CLIENT_WIDTH-4)frame->symbols[x][y].symbol=' ';
+							pmsg+=sprintf(pmsg,"%c",frame->symbols[x][y].symbol);
 						}
-
-						if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
-						{
-							asblok[i-j]=' ';
-						}else{
-							asblok[i-j]=wbuf[i];
-						}
+						pmsg+=sprintf(pmsg,"\n");
 					}
-
-					sprintf(offset,"OFFSET:%08X",offs+j);							//sps: получаем смещение OFFSET для выборки последнего символа
-					sprintf(hexstr,"%c%s%s%s%s",offset[14],space1,hxblok,space2,asblok);
-					pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
-					pmsg+=sprintf(pmsg,"\n");										//sps: Форматируем строку перемещением каретки
+					printMessage(msg);
 				}
-//-----------------------------------------------------------------------------------------------
-				printMessage(hpmsg);
-				UNS_FREE(hpmsg);
-				HexReconstruct(false, frame);												//sps: Обновляем окно TODO уйти от общих для нескольких подфункций переменных
-				*/
+				UNS_FREE(msg);
 			}
 //================================================================================================
 // SPS :: Печать окна НЕХ-просмотрщика/редактора
 //================================================================================================
-			void FrameOut(sLCDUI_Window* window, sScreenAllSymbols* data)
+			void FrameOut(sLCDUI_Window* window, sScreenAllSymbols* frame)
 			{
-
 				MUTEX_LOCK(window->mutex);												//sps: зажали мютекс окна
 				sScreen* screen = &window->screen;
 
@@ -618,10 +590,9 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				for(int y=0;y<LCD_CLIENT_HEIGHT;y++)									//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
 				{
 					for(int x=0;x<LCD_CLIENT_WIDTH;x++) {
-						Screen_PutChar(screen,data->symbols[x][y].symbol,data->symbols[x][y].inverted?true:false);
+						Screen_PutChar(screen,frame->symbols[x][y].symbol,frame->symbols[x][y].inverted?true:false);
 					}
 				}
-
 				MUTEX_UNLOCK(window->mutex);											//sps: отдали мютекс окна
 			}
 //================================================================================================
@@ -676,7 +647,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 					else if (key == KEY_PRINT)
 					{
-						printHex(frame);											//sps: Распечатать окно Hex-просмотрщика
+						printFSCR(true, frame,true);											//sps: Распечатать окно Hex-просмотрщика
 					} else {
 						beepError();
 					}
@@ -827,7 +798,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							}
 							else if (key == KEY_PRINT)
 							{
-								printHex(frame);											//sps: Распечатать окно Hex-просмотрщика
+								printFSCR(true, frame,false);											//sps: Распечатать окно Hex-просмотрщика
 
 							} else if (key == KEY_0) {	ChangeCHAR(frame,mcx,mcy,'0');
 							} else if (key == KEY_1) {	ChangeCHAR(frame,mcx,mcy,'1');
@@ -927,7 +898,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 						else if (key == KEY_PRINT)
 						{
-			//				printMessage(msg);
+							printFSCR(false,frame,false);											//sps: Распечатать окно TXT-просмотрщика
 						} else {
 							beepError();
 						}
