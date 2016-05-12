@@ -459,43 +459,38 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 // SPS :: Функция замены символов для Hex-редактора
 //================================================================================================
-			void ChangeCHAR(char* msg, int mcx, int mcy, int scx, int scy, char key)
+			void ChangeCHAR(sScreenAllSymbols* data, int mcx, int mcy, char key)
 			{
 				char 	hidhex[2];			 									//sps: Буфер для обратного конвертирования НЕХ представления символа из двух символов в один символ ASCII
-				int		icursor;			 									//sps: Вычесляем позицию курсора в буфере для замены симола
-				int		hcursor;												//sps: Вычесляем позицию курсора в просмотре хекса для замены симола
 				int 	indexch;												//sps: Индекс символа в массиве
 				char 	hexchar[6] = {'A','B','C','D','E','F'};					//sps: Набор символов для воода в HEX
 
-				icursor = (point+mcy*hstrsz+mcx/2)-1;							//sps: Вычесляем позицию курсора в буфере для замены симола
-				hcursor = (LCD_CLIENT_WIDTH*mcy+mcx)-1;
-
-				for(indexch=0;indexch<=5;indexch++){							//sps: Вычесляем индекс буквы или цифру на текущей позиции курсора
-					if (hexchar[indexch]==msg[hcursor+1])break;
-				}
-
 				if(key=='X')													//sps: Если запрос на ввод буквы
 				{
+					for(indexch=0;indexch<=5;indexch++){						//sps: Вычесляем индекс буквы или цифру на текущей позиции курсора
+						if (hexchar[indexch]==data->symbols[mcx][mcy+1].symbol)break;
+					}
+
 					if(indexch<=5){												//sps: И в текущей позиции была буква
 						if(indexch==5){											//sps: Циклически подставляем следующую букву
-							msg[hcursor+1]=hexchar[0];
+							data->symbols[mcx][mcy+1].symbol=hexchar[0];
 						}else{
-							msg[hcursor+1]=hexchar[indexch+1];
+							data->symbols[mcx][mcy+1].symbol=hexchar[indexch+1];
 						}
 					}else{														//sps: Или поставляем первую "А" если там была цифра
-						msg[hcursor+1]=hexchar[0];
+						data->symbols[mcx][mcy+1].symbol=hexchar[0];
 					}
 				}else{
-					msg[hcursor+1]=key;											//sps: Заменяем символ цифрой
+					data->symbols[mcx][mcy+1].symbol=key;						//sps: Заменяем символ цифрой
 				}
 
 				if(((mcy*hstrsz*2+mcx)-1)&1){									//sps: Определяем на какой части хекс-представления символа находится курсор
-					sprintf(hidhex,"%c%c",msg[hcursor+1],msg[hcursor+2]);		//sps: Забираем два нужных символа при нечетином курсоре
+					sprintf(hidhex,"%c%c",data->symbols[mcx][mcy+1].symbol,data->symbols[mcx+1][mcy+1].symbol);		//sps: Забираем два нужных символа при нечетином курсоре
 				}else{
-					sprintf(hidhex,"%c%c",msg[hcursor],msg[hcursor+1]);			//sps: Забираем два нужных символа при четином курсоре
+					sprintf(hidhex,"%c%c",data->symbols[mcx-1][mcy+1].symbol,data->symbols[mcx][mcy+1].symbol);		//sps: Забираем два нужных символа при четином курсоре
 				}
 
-				wbuf[icursor] = strtol(hidhex, NULL, 16);						//sps: Записываем новый символ в буфер
+				wbuf[(point+mcy*hstrsz+mcx/2)-1] = strtol(hidhex, NULL, 16);	//sps: Записываем новый символ в буфер
 
 				need_reconstruct=true;											//sps: Перестраеваем окно
 				chestat=true;													//sps: Буфер редактировался
@@ -587,64 +582,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 					}
 				}
-
-//----------------------------------------------------------------------------------------------
-				//frame->symbols[0][0].symbol=sprintf("%02X",wbuf[3]);
 			}
-//================================================================================================
-/*
-			void HexReconstruct(bool offslide)										//sps: если что-то поменялось - перерисовываем окно
-			{
-				memset(offset,0,tstrsz+1);											//sps: Чистим фсе
-				memset(hexstr,0,tstrsz+1);
-				memset(msg,0,scrsize);
-
-				char*	pmsg=msg;													//sps: Создаем указатель для склеивания всех блоков в страницу
-
-//-----------------------------------------------------------------------------------------------
-				for(int j=point;j<point+hscrsze;j+=hstrsz)							//sps: формируем пять строк
-				{
-
-					memset(hxblok,0,hstrsz*2);									//sps: Чистим фсе
-					memset(asblok,0,hstrsz);
-
-					for(int i=j;i<j+hstrsz;i++)										//sps: формируем hxblok и asblok
-					{
-						sprintf(twohex,"%02X",wbuf[i]);								//sps: hxblok - шестнадцтеричная форма байт в ASCII
-						hxblok[(i-j)*2]=twohex[0];
-						hxblok[(i-j)*2+1]=twohex[1];
-
-						if ((offs+i)>((fno->fsize)-1)){								//sps: Забиваем пробелами все что больше размера файла
-							hxblok[(i-j)*2]=LCD_SYMBOL_CHESS;
-							hxblok[(i-j)*2+1]=LCD_SYMBOL_CHESS;
-						}
-
-						if(wbuf[i]<' ')												//sps: asblok - ASCII имволы байт, с заменой спецсимволов
-						{
-							asblok[i-j]=' ';
-						}else{
-							asblok[i-j]=wbuf[i];
-						}
-					}
-
-					if (offslide){
-						sprintf(offset,"%08X",offs+j);						//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам (скользящее)
-					}else{
-						sprintf(offset,"%08X",j-point);						//sps: получаем смещение OFFSET в шестнадцтеричном формате по строкам (неподвижное)
-					}
-
-					//sps: Клеем симпатичную строчку, а она ломается)
-					sprintf(hexstr,"%c%s%s%s%s",offset[7],space1,hxblok,space2,asblok);
-
-					pmsg+=sprintf(pmsg,"%s",hexstr);								//sps: Клеем текстовый блок
-				}
-			}
- */
 //================================================================================================
 // SPS :: Печать окна НЕХ-просмотрщика/редактора
 //================================================================================================
 			void printHex(sScreenAllSymbols* frame)									//sps: TODO Переписать под массивы
 			{
+
 		/*		char*  	hpmsg=UNS_MALLOC(scrsize+20);
 				char 	twohex[2];													//sps: Бфер для двухсимольного значения байта в НЕХ-е
 
@@ -928,17 +872,17 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 							{
 								printHex(frame);											//sps: Распечатать окно Hex-просмотрщика
 
-							} else if (key == KEY_0) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'0');
-							} else if (key == KEY_1) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'1');
-							} else if (key == KEY_2) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'2');
-							} else if (key == KEY_3) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'3');
-							} else if (key == KEY_4) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'4');
-							} else if (key == KEY_5) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'5');
-							} else if (key == KEY_6) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'6');
-							} else if (key == KEY_7) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'7');
-							} else if (key == KEY_8) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'8');
-							} else if (key == KEY_9) {	ChangeCHAR(msg,mcx,mcy,scx,scy,'9');
-							} else if (key == KEY_00){	ChangeCHAR(msg,mcx,mcy,scx,scy,'X');
+							} else if (key == KEY_0) {	ChangeCHAR(frame,mcx,mcy,'0');
+							} else if (key == KEY_1) {	ChangeCHAR(frame,mcx,mcy,'1');
+							} else if (key == KEY_2) {	ChangeCHAR(frame,mcx,mcy,'2');
+							} else if (key == KEY_3) {	ChangeCHAR(frame,mcx,mcy,'3');
+							} else if (key == KEY_4) {	ChangeCHAR(frame,mcx,mcy,'4');
+							} else if (key == KEY_5) {	ChangeCHAR(frame,mcx,mcy,'5');
+							} else if (key == KEY_6) {	ChangeCHAR(frame,mcx,mcy,'6');
+							} else if (key == KEY_7) {	ChangeCHAR(frame,mcx,mcy,'7');
+							} else if (key == KEY_8) {	ChangeCHAR(frame,mcx,mcy,'8');
+							} else if (key == KEY_9) {	ChangeCHAR(frame,mcx,mcy,'9');
+							} else if (key == KEY_00){	ChangeCHAR(frame,mcx,mcy,'X');
 
 							} else {
 								beepError();
