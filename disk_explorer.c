@@ -344,83 +344,78 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				return false;
 			}
 //-----------------------------------------------------------------------------------------------
-		int    			point=0;				//sps: Позиция на которой сейчас отображаемый текст относительно...
-		int    			size=fno->fsize;		//sps: Размер открываемого файла
-//-----------------------------------------------------------------------------------------------
-		#define hsize 512															//sps:	Размер половины буфера
-		#define wsize hsize*2														//sps:	Размер буфера
-
-		#define hstrsz 	4															//sps:	Кол-во обрабатываемых символов в строке HEX
-		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT							//sps:	Кол-во символов на экране в TXT
-		#define hscrsze hstrsz*(LCD_CLIENT_HEIGHT-1)								//sps:	Кол-во символов на экране в HEX
-		#define tstrsz	LCD_CLIENT_WIDTH											//sps:	Кол-во обрабатываемых символов в строке TXT
-		#define slnum 	1															//sps:	Кол-во имволов для отображения смещения адреса
-
-		#define spcount2 (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))/2				//sps: Вычисляем ширину пробелов в зависимости от ширины экрана
+		#define hsize 512														//sps:	Размер половины буфера
+		#define wsize hsize*2													//sps:	Размер буфера
+		#define hstrsz 	4														//sps:	Кол-во обрабатываемых символов в строке HEX
+		#define scrsize LCD_CLIENT_WIDTH*LCD_CLIENT_HEIGHT						//sps:	Кол-во символов на экране в TXT
+		#define hscrsze hstrsz*(LCD_CLIENT_HEIGHT-1)							//sps:	Кол-во символов на экране в HEX
+		#define tstrsz	LCD_CLIENT_WIDTH										//sps:	Кол-во обрабатываемых символов в строке TXT
+		#define slnum 	1														//sps:	Кол-во имволов для отображения смещения адреса
+		#define spcount2 (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))/2			//sps:  Вычисляем ширину пробелов в зависимости от ширины экрана
 		#define spcount1 (LCD_CLIENT_WIDTH-(hstrsz*2+hstrsz+slnum))-spcount2
-		#define hex_Lmarg (spcount1+slnum)											//sps: Ширина левого отступа в НЕХ-просмотре
-		#define hex_Rmarg (spcount2)												//sps: Ширина правого отступа в НЕХ-просмотре
+		#define hex_Lmarg (spcount1+slnum)										//sps:  Ширина левого отступа в НЕХ-просмотре
 //-----------------------------------------------------------------------------------------------
-		unsigned int len;															//sps:	Возврат прочитанных байт
-		unsigned int offs=0;														//sps:	Смещение буфера по файлу
-		unsigned int grab;															//sps:	Кол-во загружаеммых в буфер байт
+		bool	chestat=false;													//sps: 	Было ли редактирование?
+		bool 	need_redraw;													//sps: 	Пнуть в ТРУ если нужно перисовать окошко при перемещении курсора
+		bool 	need_reconstruct;												//sps: 	Пнуть в ТРУ если нужно перисовать окошко новой инфой
+//-----------------------------------------------------------------------------------------------
+		char* 		 	wbuf=UNS_MALLOC(wsize+1);								//sps:	Буфер
+		int    			size=fno->fsize;										//sps:  Размер открываемого файла
+		int    			point=0;												//sps:  Позиция на которой сейчас отображаемый текст относительно смещения offsa
+		unsigned int	len;													//sps:	Возврат прочитанных байт
+		unsigned int 	offs=0;													//sps:	Смещение буфера по файлу
+		unsigned int 	grab;													//sps:	Кол-во загружаеммых в буфер байт
 
-		char* 		 wbuf=UNS_MALLOC(wsize+1);										//sps:	Буфер
-		if(wbuf==NULL) return false;												//sps: Проверяем что все создалось правильно
-
-		bool		 chestat=false;													//sps: 	Было ли редактирование?
-		bool 		 need_redraw;													//sps: 	Пнуть в ТРУ если нужно перисовать окошко при перемещении курсора
-		bool 		 need_reconstruct;												//sps: 	Пнуть в ТРУ если нужно перисовать окошко новой инфой
+		if(wbuf==NULL) return false;											//sps:  Проверяем что все создалось правильно
 //-----------------------------------------------------------------------------------------------
 //================================================================================================
 // SPS :: Функция загрузки и обработки скользящего буфера
 //================================================================================================
-			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер
+			void ReGrab(bool rewrite)											//sps: Захват части файла в буфер (HALF-BUFF)
 			{
 				FIL 	fil;
-//----------------------------------------------------------------- HALF-BUFF
 				if(rewrite==1) {
 
-					FRESULT fres=f_open(&fil,full_path, FA_WRITE);			//sps:	Открываем файл на запись
+					FRESULT fres=f_open(&fil,full_path, FA_WRITE);				//sps:	Открываем файл на запись
 
 					if(fres==FR_OK)
 					{
-						if(((fno->fsize)-offs)>=wsize){grab=wsize;}else{grab=((fno->fsize)-offs);}		//sps:	Вычисление кол-ва байт
+						(((fno->fsize)-offs)>=wsize)?(grab=wsize):(grab=((fno->fsize)-offs));	//sps:	Вычисление кол-ва байт
 
-						f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
-						f_write(&fil, wbuf, grab, &len);					//sps:	Пишем все что изменили
-						chestat=false;										//sps:  Изменения в буфере сохранены
+						f_lseek(&fil, offs);									//sps:	Сдвигаем позицию считывания
+						f_write(&fil, wbuf, grab, &len);						//sps:	Пишем все что изменили
+						chestat=false;											//sps:  Изменения в буфере сохранены
 					}
-					f_close(&fil);											//sps:	Закрываем файл
+					f_close(&fil);												//sps:	Закрываем файл
 				}
 
-				FRESULT fres=f_open(&fil,full_path,FA_READ);				//sps:	Открываем файл на чтение
+				FRESULT fres=f_open(&fil,full_path,FA_READ);					//sps:	Открываем файл на чтение
 
 				if(fres==FR_OK)
 				{
-					memcpy(wbuf,wbuf+hsize,hsize);							//sps:	Переносим нижние пол буфера вверх
+					memcpy(wbuf,wbuf+hsize,hsize);								//sps:	Переносим нижние пол буфера вверх
 
 						if(offs!=0){
 							grab=hsize;
-							f_lseek(&fil, offs+hsize);						//sps:	Сдвигаем позицию считывания
+							f_lseek(&fil, offs+hsize);							//sps:	Сдвигаем позицию считывания
 						}else{
 							grab=wsize;
-							f_lseek(&fil, offs);							//sps:	Сдвигаем позицию считывания
+							f_lseek(&fil, offs);								//sps:	Сдвигаем позицию считывания
 						}
 
-					memset(wbuf+hsize,0,hsize);								//sps: Чистим вторые пол буфера т.к. заполним его не полностью
+					memset(wbuf+hsize,0,hsize);									//sps: Чистим вторые пол буфера т.к. заполним его не полностью
 
 					if(offs!=0){
-						fres=f_read(&fil,wbuf+hsize,grab,&len);				//sps:	Читаем из файла пол буфера
+						fres=f_read(&fil,wbuf+hsize,grab,&len);					//sps:	Читаем из файла пол буфера
 					}else{
-						fres=f_read(&fil,wbuf,grab,&len);					//sps:	Читаем из файла целый буфер
+						fres=f_read(&fil,wbuf,grab,&len);						//sps:	Читаем из файла целый буфер
 					}
 
-					wbuf[offs+grab]=0;										//sps:	Затыкаем строку в буфере
+					wbuf[offs+grab]=0;											//sps:	Затыкаем строку в буфере
 					DBGF("offs+grab = %d",offs+grab)
 				}
 
-					f_close(&fil);											//sps:	Закрываем файл
+					f_close(&fil);												//sps:	Закрываем файл
 			}
 //================================================================================================
 // SPS :: Функция замены символов для Hex-редактора
@@ -510,40 +505,44 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				char 	twohex[2];												//sps: Бфер для двухсимольного значения байта в НЕХ-е
 				char	offset[tstrsz];
 				char	yh;
-				#define	shift 2
 //----------------------------------------------------------------------------------------------
-				sprintf(offset,"OFFSET:%08X",offs+point);								//sps: Получаем "строку смещения"
+				sprintf(offset,"OFFSET:%08X",offs+point);						//sps: Получаем "строку смещения"
 				for(int i=0;i<LCD_CLIENT_WIDTH;i++)
 				{
-					frame->symbols[i][0].symbol=offset[i];								//sps: Переносим ее в массив кадра
+					frame->symbols[i][0].symbol=offset[i];						//sps: Переносим ее в массив кадра
 				}
 
-				for(int j=point;j<point+hscrsze;j+=hstrsz)								//sps: формируем пять строк
+				for(int j=point;j<point+hscrsze;j+=hstrsz)						//sps: формируем пять строк
 				{
 					yh=(j-point)/4+1;
 
-					offslide?sprintf(offset,"%08X",offs+j):sprintf(offset,"%08X",j-point);		  //sps: Cмещение OFFSET по строкам (скользящее):(неподвижное)
+					offslide?sprintf(offset,"%08X",offs+j):sprintf(offset,"%08X",j-point);		  	//sps: Cмещение OFFSET по строкам (скользящее):(неподвижное)
 
 					frame->symbols[0][yh].symbol=offset[7];
-					frame->symbols[1][yh].symbol=' ';									//sps: Забиваем пробелы т.к. касса не умеет отображать дальше \0-ячеек
-					frame->symbols[shift+hstrsz*2][yh].symbol=' ';						//sps: Забиваем пробелы т.к. касса не умеет отображать дальше \0-ячеек
 
-					for(int i=j;i<j+hstrsz;i++)											//sps: формируем hxblok и asblok
+
+					for(int i=0;i<spcount1;i++)
 					{
-						sprintf(twohex,"%02X",wbuf[i]);									//sps: hxblok - шестнадцтеричная форма байт в ASCII
-						frame->symbols[(i-j)*2+shift][yh].symbol=twohex[0];
-						frame->symbols[(i-j)*2+shift+1][yh].symbol=twohex[1];
+						if(spcount1-i > 0)frame->symbols[slnum+i][yh].symbol=' ';					//sps: Забиваем пробелы т.к. касса не умеет отображать дальше \0-ячеек
+						if(spcount2-i > 0)frame->symbols[hex_Lmarg+hstrsz*2+i][yh].symbol=' ';		//sps: Забиваем пробелы т.к. касса не умеет отображать дальше \0-ячеек
+					}
 
-						if ((offs+i)>((fno->fsize)-1)){									//sps: Забиваем пробелами все что больше размера файла
-							frame->symbols[(i-j)*2+shift][yh].symbol=LCD_SYMBOL_CHESS;
-							frame->symbols[(i-j)*2+shift+1][yh].symbol=LCD_SYMBOL_CHESS;
+					for(int i=j;i<j+hstrsz;i++)														//sps: формируем hxblok и asblok
+					{
+						sprintf(twohex,"%02X",wbuf[i]);												//sps: hxblok - шестнадцтеричная форма байт в ASCII
+						frame->symbols[(i-j)*2+hex_Lmarg][yh].symbol=twohex[0];
+						frame->symbols[(i-j)*2+hex_Lmarg+1][yh].symbol=twohex[1];
+
+						if ((offs+i)>((fno->fsize)-1)){												//sps: Забиваем пробелами все что больше размера файла
+							frame->symbols[(i-j)*2+hex_Lmarg][yh].symbol=LCD_SYMBOL_CHESS;
+							frame->symbols[(i-j)*2+hex_Lmarg+1][yh].symbol=LCD_SYMBOL_CHESS;
 						}
 
-						if(wbuf[i]<' ')													//sps: asblok - ASCII символы байт, с заменой спецсимволов
+						if(wbuf[i]<' ')																//sps: asblok - ASCII символы байт, с заменой спецсимволов
 						{
-							frame->symbols[i-j+shift+hstrsz*2+1][yh].symbol=' ';
+							frame->symbols[i-j+hex_Lmarg+hstrsz*2+1][yh].symbol=' ';
 						}else{
-							frame->symbols[i-j+shift+hstrsz*2+1][yh].symbol=wbuf[i];
+							frame->symbols[i-j+hex_Lmarg+hstrsz*2+1][yh].symbol=wbuf[i];
 						}
 					}
 				}
@@ -555,16 +554,16 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 			{
 				char*  	msg=UNS_MALLOC(scrsize+LCD_CLIENT_HEIGHT+1);
 //----------------------------------------------------------------------------------------------
-				if(!hex){																	//sps: Если это не НЕХ-представление файла - печатаем текст
+				if(!hex){																			//sps: Если это не НЕХ-представление файла - печатаем текст
 
 					memcpy(msg,wbuf+point,scrsize);
-					for(int i=0;i<scrsize;i++){if(msg[i]<' ')msg[i]=' ';}					//sps: замена непечатаемых спецсимволов
+					for(int i=0;i<scrsize;i++){if(msg[i]<' ')msg[i]=' ';}							//sps: замена непечатаемых спецсимволов
 					printMessage(msg);
 
-				}else{																		//sps: Если это НЕХ-представление - формируем НЕХ в текст
+				}else{																				//sps: Если это НЕХ-представление - формируем НЕХ в текст
 
 					char*	pmsg=msg;
-					for(int y=0;y<LCD_CLIENT_HEIGHT;y++)									//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
+					for(int y=0;y<LCD_CLIENT_HEIGHT;y++)											//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
 					{
 						for(int x=0;x<LCD_CLIENT_WIDTH;x++) {
 							if(frame->symbols[x][y].symbol==LCD_SYMBOL_CHESS && x<LCD_CLIENT_WIDTH-4)frame->symbols[x][y].symbol=' ';
@@ -581,62 +580,62 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 //================================================================================================
 			void FrameOut(sLCDUI_Window* window, sScreenAllSymbols* frame)
 			{
-				MUTEX_LOCK(window->mutex);												//sps: зажали мютекс окна
+				MUTEX_LOCK(window->mutex);													//sps: зажали мютекс окна
 				sScreen* screen = &window->screen;
 
 				Screen_Clear(screen);
 				Screen_DrawButtons(screen,LANG_MENU_BUTTON_BACK,LANG_MENU_BUTTON_OPTIONS);
 
-				for(int y=0;y<LCD_CLIENT_HEIGHT;y++)									//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
+				for(int y=0;y<LCD_CLIENT_HEIGHT;y++)										//sps: "MASS CONSTRUCTOR" Выводим на экран символы из массива кадра
 				{
 					for(int x=0;x<LCD_CLIENT_WIDTH;x++) {
 						Screen_PutChar(screen,frame->symbols[x][y].symbol,frame->symbols[x][y].inverted?true:false);
 					}
 				}
-				MUTEX_UNLOCK(window->mutex);											//sps: отдали мютекс окна
+				MUTEX_UNLOCK(window->mutex);												//sps: отдали мютекс окна
 			}
 //================================================================================================
 // SPS :: HЕХ-просмотрщик
 //================================================================================================
 			eKey HexView(sLCDUI_Window* window) {
 
-			need_redraw=true;														//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
-			need_reconstruct=true;													//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
-			sScreenAllSymbols localMassData = { 0 };								//sps: Создаем пустую структуру массивов
-			sScreenAllSymbols* frame = &localMassData;								//sps: Берем указатель
+			need_redraw=true;																//sps: Пнуть в ТРУ если нужно перисовать окошко при редактировании
+			need_reconstruct=true;															//sps: Пнуть в ТРУ если нужно перисовать окошко новой инфой
+			sScreenAllSymbols localMassData = { 0 };										//sps: Создаем пустую структуру массивов
+			sScreenAllSymbols* frame = &localMassData;										//sps: Берем указатель
 
 //-----------------------------------------------------------------------------------------------
 
 			for (;;)
 			{
 				if(need_reconstruct){
-					HexReconstruct(false, frame);									//sps: Конструируем окно
+					HexReconstruct(false, frame);											//sps: Конструируем окно
 					need_reconstruct=false;
 				}
 
 				//-----------------------------------------------------------------------------------------------
 
-				if(need_redraw)														//sps: если что-то поменялось - перерисовываем окно
+				if(need_redraw)																//sps: если что-то поменялось - перерисовываем окно
 				{
-					FrameOut(window, frame);										//sps: Выводим кадр на экран
-					need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
+					FrameOut(window, frame);												//sps: Выводим кадр на экран
+					need_redraw=false;														//sps: закрыли иф, пока кнопку не ткнут
 				}
 
 //-----------------------------------------------------------------------------------------------
-				eKey key = LCDUI_Window_FetchKey(window);							//sps: проверяем кнопочки
+				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
 				if (key != KEY_NONE)
 				{
 					if ((key == KEY_UP || key==KEY_PGUP) && point > 0)
 					{
-						HexScreenUp();												//sps: Листаем вверх
-						HexReconstruct(false, frame);								//sps: Конструируем окно
+						HexScreenUp();														//sps: Листаем вверх
+						HexReconstruct(false, frame);										//sps: Конструируем окно
 					}
 						else if ((key == KEY_DOWN || key == KEY_PGDOWN) && offs+point+hscrsze < size)
 					{
-						HexScreenDown();											//sps: Листаем вниз
-						HexReconstruct(false, frame);								//sps: Конструируем окно
+						HexScreenDown();													//sps: Листаем вниз
+						HexReconstruct(false, frame);										//sps: Конструируем окно
 					}
-						else if (key == KEY_RSOFT)									//sps: Уходим отсюда
+						else if (key == KEY_RSOFT)											//sps: Уходим отсюда
 					{
 						return key;
 						break;
@@ -647,7 +646,7 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						}
 					else if (key == KEY_PRINT)
 					{
-						printFSCR(true, frame,true);											//sps: Распечатать окно Hex-просмотрщика
+						printFSCR(true, frame,true);										//sps: Распечатать окно Hex-просмотрщика
 					} else {
 						beepError();
 					}
@@ -679,10 +678,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 
 				for (;;)
 				{
-						if(need_reconstruct){
-							HexReconstruct(true, frame);									//sps: Конструируем окно
-							need_reconstruct=false;
-						}
+					if(need_reconstruct){
+						HexReconstruct(true, frame);									//sps: Конструируем окно
+						need_reconstruct=false;
+					}
 
 					if(need_redraw)															//sps: если что-то поменялось - перерисовываем окно
 					{
@@ -744,11 +743,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								mcy=shad_cy;
 							}
 						}
-
 						////////////////////////////////// БЛОК ПРЕОБРАЗОВАНИЙ И УСТАНОВКИ КООРДИНАТ КУРСОРА ////////////////////////////////////////////////
 
 						scy=mcy;
-						scx=shift+hstrsz*2+mcx/2;
+						scx=hex_Lmarg+hstrsz*2+mcx/2;
 
 						frame->symbols[mcx][mcy+1].inverted=true;
 						frame->symbols[scx][scy+1].inverted=true;
@@ -756,12 +754,8 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 						/////////////////////////////////////////////// БЛОК ОТРИСОВКИ СТРАНИЦЫ /////////////////////////////////////////////////////////////
 
 						FrameOut(window, frame);											//sps: Выводим кадр на экран
-
-//-----------------------------------------------------------------------------------------------
-
-							need_redraw=false;												//sps: закрыли иф, пока кнопку не ткнут
+						need_redraw=false;													//sps: закрыли иф, пока кнопку не ткнут
 					}
-
 //-----------------------------------------------------------------------------------------------
 
 				eKey key = LCDUI_Window_FetchKey(window);									//sps: проверяем кнопочки
@@ -789,16 +783,13 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 								break;
 							}
 							else if (key == KEY_LSOFT) {
-								if(chestat){				//sps: Если были изменения в буфере, предложим сохранить
+								if(chestat){												//sps: Если были изменения в буфере, предложим сохранить
 									eKey res=LCD_ReadmeWithNoYesButtons(LANG_HEXEDIT_WRASK,JUSTIFY_CENTER);
 									if(res==KEY_RSOFT){ReGrab(true);}else{ReGrab(false);}
 								}
 								return key;
 								break;
-							}
-							else if (key == KEY_PRINT)
-							{
-								printFSCR(true, frame,false);											//sps: Распечатать окно Hex-просмотрщика
+							}else if (key == KEY_PRINT){ printFSCR(true, frame,false);		//sps: Распечатать окно Hex-просмотрщика
 
 							} else if (key == KEY_0) {	ChangeCHAR(frame,mcx,mcy,'0');
 							} else if (key == KEY_1) {	ChangeCHAR(frame,mcx,mcy,'1');
@@ -947,13 +938,10 @@ static bool readFileBf(FILINFO* fno, char* full_path){
 				LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("- Txt Viewer", false, 0, &MenuChose,eInvisible));
 				LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("- Hex Viewer", false, 1, &MenuChose,eInvisible));
 				LCDUI_Form_AddControl(form, LCDUI_RadioListItem_New("- Hex Editor", false, 2, &MenuChose,eInvisible));
-
 				LCDUI_Form_Show(form);
 
-				DBGF("MenuChose=%d",MenuChose);
-
+				DBGF("TXT/HEX MenuChose=%d",MenuChose);
 				if (MenuChose==-1)	{break;}
-
 			}
 
 //-----------------------------------------------------------------------------------------------
